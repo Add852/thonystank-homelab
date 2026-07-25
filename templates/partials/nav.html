@@ -9,7 +9,7 @@
         <div class="hidden md:flex items-center gap-1">
             <a href="/" class="nav-link rounded-md text-sm font-medium {% if request.url.path == '/' %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700/50{% endif %} transition-colors"><i class="fas fa-server mr-1.5 text-xs"></i>Dashboard</a>
             <a href="/notes" class="nav-link rounded-md text-sm font-medium {% if request.url.path.startswith('/note') or request.url.path == '/notes' %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700/50{% endif %} transition-colors"><i class="fas fa-feather-alt mr-1.5 text-xs"></i>Notes</a>
-            <a href="/reviews" class="nav-link rounded-md text-sm font-medium {% if '/reviews' in request.url.path %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700/50{% endif %} transition-colors"><i class="fas fa-star mr-1.5 text-xs"></i>Reviews</a>
+            <a href="/reviews" class="nav-link rounded-md text-sm font-medium {% if request.url.path.startswith('/reviews') %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700/50{% endif %} transition-colors"><i class="fas fa-star mr-1.5 text-xs"></i>Reviews</a>
         </div>
 
         <!-- Hamburger (mobile) -->
@@ -23,6 +23,6 @@
     <div id="mobileMenu" class="md:hidden hidden nav-links-mobile">
         <a href="/" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium {% if request.url.path == '/' %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700{% endif %} transition-colors"><i class="fas fa-server mr-2 w-4 text-center"></i>Dashboard</a>
         <a href="/notes" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium {% if request.url.path.startswith('/note') or request.url.path == '/notes' %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700{% endif %} transition-colors"><i class="fas fa-feather-alt mr-2 w-4 text-center"></i>Notes</a>
-        <a href="/reviews" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium {% if '/reviews' in request.url.path %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700{% endif %} transition-colors"><i class="fas fa-star mr-2 w-4 text-center"></i>Reviews</a>
+        <a href="/reviews" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium {% if request.url.path.startswith('/reviews') %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700{% endif %} transition-colors"><i class="fas fa-star mr-2 w-4 text-center"></i>Reviews</a>
     </div>
 </nav>

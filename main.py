@@ -8,13 +8,13 @@ from fastapi.responses import HTMLResponse, FileResponse
 
 from monitoring_service import get_service_status
 from content_service import get_public_notes, get_note_by_slug, get_reviews
-from auth import BasicAuthMiddleware
 from dataclasses import asdict
 from markdown_utils import render_markdown
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-with open(os.path.join(BASE_DIR, "config.yaml")) as f:
+_CONFIG_PATH = os.environ.get("SERVER_DASHBOARD_CONFIG", os.path.join(BASE_DIR, "config.yaml"))
+with open(_CONFIG_PATH) as f:
     CONFIG = yaml.safe_load(f)
 
 app = FastAPI()
