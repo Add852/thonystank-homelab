@@ -1,0 +1,26 @@
+<script>
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    if (!menu) return;
+    menu.classList.toggle('hidden');
+    const bars = document.getElementById('menuBars');
+    const xmark = document.getElementById('menuXmark');
+    if (bars) bars.classList.toggle('hidden');
+    if (xmark) xmark.classList.toggle('hidden');
+}
+
+/* close mobile menu on click outside */
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('mobileMenu');
+    const btn = e.target.closest('button');
+    if (!menu || menu.classList.contains('hidden')) return;
+    if (btn && btn.getAttribute('onclick')?.includes('toggleMobileMenu')) return;
+    if (!e.target.closest('#mobileMenu')) {
+        menu.classList.add('hidden');
+        const bars = document.getElementById('menuBars');
+        const xmark = document.getElementById('menuXmark');
+        if (bars) bars.classList.remove('hidden');
+        if (xmark) xmark.classList.add('hidden');
+    }
+});
+</script>

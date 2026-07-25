@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Reviews{% endblock %}
+
+{% block head_extra %}
+<style>
+    .review-card { transition: transform .2s; }
+    .review-card:active { transform: scale(.98); }
+    .tab-btn {
+        padding: 8px 18px; border-radius: 8px; font-size: 0.875rem; font-weight: 500;
+        cursor: pointer; transition: all .15s; border: none;
+        background: #334155; color: #94a3b8;
+    }
+    .tab-btn:hover { background: #475569; color: #e2e8f0; }
+    .tab-btn.active { background: #2563eb; color: #fff; }
+    .sort-btn {
+        padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 500;
+        cursor: pointer; transition: all .15s; border: 1px solid #334155;
+        background: transparent; color: #64748b;
+    }
+    .sort-btn:hover { border-color: #475569; color: #cbd5e1; }
+    .sort-btn.active { border-color: #2563eb; color: #60a5fa; }
+    .sort-btn .arrow { margin-left: 4px; font-size: 0.65rem; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .tab-panel .grid { overflow-y: auto; }
+    .modal-overlay {
+        position: fixed; inset: 0; z-index: 50;
+        background: rgba(0,0,0,.7); padding: 12px;
+        display: none;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+        background: #1e293b; border: 1px solid #334155;
+        border-radius: 12px; max-width: 640px; width: 100%;
+        max-height: 90vh; overflow-y: auto;
+        margin: auto; padding: 20px;
+        -webkit-overflow-scrolling: touch;
+    }
+    .modal-content::-webkit-scrollbar { width: 4px; }
+    .modal-content::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+    .star { color: #facc15; }
+    .star.empty { color: #475569; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-2 mb-6">
+    <i class="fas fa-star text-blue-400 text-xl"></i>
+    <h2 class="text-xl sm:text-3xl font-bold text-slate-100">Reviews</h2>
+</div>
+
+<!-- Tabs (bar only, no global sort) -->
+<div class="flex flex-wrap gap-2 mb-5">
+    <button class="tab-btn active" onclick="switchTab('movies')" data-tab="movies"><i class="fas fa-film mr-1.5"></i>Movies</button>
+    <button class="tab-btn" onclick="switchTab('series')" data-tab="series"><i class="fas fa-tv mr-1.5"></i>Series</button>
+    <button class="tab-btn" onclick="switchTab('books')" data-tab="books"><i class="fas fa-book mr-1.5"></i>Books</button>
+</div>
+
+{% for cat in ['movies', 'series', 'books'] %}
+{% set items = reviews.get(cat, []) %}
+<div id="tab-{{ cat }}" class="tab-panel {% if loop.first %}active{% endif %}">
+    <!-- Per-tab sort -->
+    <div class="flex gap-2 mb-5">
+        <button class="sort-btn active" onclick="toggleSort('{{ cat }}', 'date')" data-cat="{{ cat }}" data-sort="date">Date <span class="arrow">▼</span></button>
+        <button class="sort-btn" onclick="toggleSort('{{ cat }}', 'rating')" data-cat="{{ cat }}" data-sort="rating">Rating <span class="arrow">▼</span></button>
+    </div>
+
+    {% if items %}
+    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {% for r in items %}
+        <div class="review-card bg-slate-800 rounded-xl border border-slate-700 p-4 cursor-pointer"
+             data-rating="{{ r.rating }}" data-date="{{ r.created_ts }}"
+             onclick='openModal({
+                 title: {{ r.title | tojson }},
+                 creator: {{ r.creator | tojson }},
+                 rating: {{ r.rating }},
+                 created: {{ r.created | tojson }},
+                 genres: {{ r.genres | tojson }},
+                 description: {{ r.description_html | tojson }},
+                 comment: {{ r.comment_html | tojson }},
+                 image: {{ r.image | tojson }}
+             })'>
+            <div class="flex items-start gap-3">
+                {% if r.image %}
+                <img src="{{ r.image }}" alt="" class="w-16 h-22 sm:w-20 sm:h-28 object-cover rounded-lg shrink-0" loading="lazy">
+                {% endif %}
+                <div class="min-w-0 flex-1">
+                    <h4 class="font-semibold text-base text-slate-100 truncate">{{ r.title }}</h4>
+                    <p class="text-sm text-slate-400 truncate">{{ r.creator }}</p>
+                    <div class="flex items-center gap-0.5 mt-1.5">
+                        {% set sf = r.rating / 2 %}
+                        {% for i in range(5) %}
+                        {% if i + 1 <= sf %}
+                        <span class="star text-sm">★</span>
+                        {% elif i < sf and i + 1 > sf %}
+                        {% set pct = ((sf - i) * 100) | round %}
+                        <span style="position:relative;display:inline-block;width:1em;height:1em;line-height:1;vertical-align:text-bottom;">
+                            <span style="color:#475569;">★</span>
+                            <span style="position:absolute;left:0;top:0;overflow:hidden;width:{{ pct }}%;color:#facc15;">★</span>
+                        </span>
+                        {% else %}
+                        <span class="star text-sm empty">★</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% if r.created %}
+                    <p class="text-xs text-slate-500 mt-1">{{ r.created }}</p>
+                    {% endif %}
+                    {% if r.genres %}
+                    <p class="text-xs text-slate-500 mt-1 truncate">{{ r.genres }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-slate-500">No reviews yet.</p>
+    {% endif %}
+</div>
+{% endfor %}
+
+<!-- Modal -->
+<div id="reviewModal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-start mb-3">
+            <div class="min-w-0 flex-1 mr-2">
+                <h3 id="modalTitle" class="text-lg sm:text-xl font-bold text-slate-100 truncate"></h3>
+                <p id="modalCreator" class="text-sm sm:text-base text-slate-400 truncate"></p>
+                <p id="modalDate" class="text-xs text-slate-500 mt-0.5"></p>
+            </div>
+            <button onclick="closeModal()" class="modal-close text-slate-400 hover:text-slate-200 text-xl rounded-lg">&times;</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+            <div id="modalStars" class="flex items-center gap-0.5"></div>
+            <span id="modalGenres" class="text-sm text-slate-500"></span>
+        </div>
+        <img id="modalImage" src="" alt="" class="w-full max-h-48 sm:max-h-72 object-cover rounded-lg mb-3" style="display:none">
+        <div id="modalDescription" class="prose prose-sm prose-invert mb-3"></div>
+        <div id="modalComment" class="prose prose-sm prose-invert border-t border-slate-700 pt-3" style="display:none"></div>
+    </div>
+</div>
+
+<script>
+    // Per-category sort state
+    const sortState = {};
+
+    function openModal(data) {
+        document.getElementById('modalTitle').textContent = data.title;
+        document.getElementById('modalCreator').textContent = data.creator;
+        document.getElementById('modalGenres').textContent = data.genres || '';
+        document.getElementById('modalDate').textContent = data.created || '';
+
+        const starsEl = document.getElementById('modalStars');
+        starsEl.innerHTML = '';
+        const sf = data.rating / 2;
+        for (let i = 0; i < 5; i++) {
+            if (i + 1 <= sf) {
+                const s = document.createElement('span');
+                s.className = 'star text-sm';
+                s.textContent = '\u2605';
+                starsEl.appendChild(s);
+            } else if (i < sf && i + 1 > sf) {
+                const pct = Math.round((sf - i) * 100);
+                const wrap = document.createElement('span');
+                wrap.style.cssText = 'position:relative;display:inline-block;width:1em;height:1em;line-height:1;vertical-align:text-bottom;';
+                const emptyStar = document.createElement('span');
+                emptyStar.style.color = '#475569';
+                emptyStar.textContent = '\u2605';
+                const filledStar = document.createElement('span');
+                filledStar.style.cssText = 'position:absolute;left:0;top:0;overflow:hidden;width:' + pct + '%;color:#facc15;';
+                filledStar.textContent = '\u2605';
+                wrap.appendChild(emptyStar);
+                wrap.appendChild(filledStar);
+                starsEl.appendChild(wrap);
+            } else {
+                const s = document.createElement('span');
+                s.className = 'star text-sm empty';
+                s.textContent = '\u2605';
+                starsEl.appendChild(s);
+            }
+        }
+
+        const img = document.getElementById('modalImage');
+        if (data.image) {
+            img.src = data.image;
+            img.style.display = 'block';
+        } else {
+            img.style.display = 'none';
+        }
+
+        document.getElementById('modalDescription').innerHTML = data.description || '';
+        const commentEl = document.getElementById('modalComment');
+        if (data.comment) {
+            commentEl.innerHTML = data.comment;
+            commentEl.style.display = 'block';
+        } else {
+            commentEl.style.display = 'none';
+        }
+
+        document.getElementById('reviewModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(e) {
+        if (e && e.target !== e.currentTarget) return;
+        document.getElementById('reviewModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.querySelector('.tab-btn[data-tab="' + tab + '"]').classList.add('active');
+    }
+
+    function toggleSort(cat, sort) {
+        if (!sortState[cat]) sortState[cat] = {field: 'date', asc: false};
+        const st = sortState[cat];
+        if (st.field !== sort) {
+            st.field = sort;
+            st.asc = false;
+        } else {
+            st.asc = !st.asc;
+        }
+        // Update sort buttons in this tab
+        const panel = document.getElementById('tab-' + cat);
+        panel.querySelectorAll('.sort-btn').forEach(el => {
+            el.classList.remove('active');
+            el.querySelector('.arrow').textContent = '▼';
+        });
+        const btn = panel.querySelector('.sort-btn[data-sort="' + sort + '"]');
+        btn.classList.add('active');
+        btn.querySelector('.arrow').textContent = st.asc ? '▲' : '▼';
+        applySort(cat);
+    }
+
+    function applySort(cat) {
+        const panel = document.getElementById('tab-' + cat);
+        const grid = panel.querySelector('.grid');
+        if (!grid) return;
+        const cards = Array.from(grid.querySelectorAll('.review-card'));
+        const st = sortState[cat] || {field: 'date', asc: false};
+        cards.sort((a, b) => {
+            const va = parseFloat(a.getAttribute('data-' + st.field));
+            const vb = parseFloat(b.getAttribute('data-' + st.field));
+            return st.asc ? va - vb : vb - va;
+        });
+        cards.forEach(c => grid.appendChild(c));
+    }
+</script>
+{% endblock %}

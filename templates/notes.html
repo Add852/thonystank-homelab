@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Notes{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-2 mb-5">
+    <i class="fas fa-feather-alt text-blue-400 text-xl"></i>
+    <h2 class="text-xl sm:text-3xl font-bold text-slate-100">Notes</h2>
+</div>
+
+<!-- Tags -->
+{% if tags %}
+<div class="flex flex-wrap gap-2 mb-6">
+    <a href="/notes" class="px-3 py-1.5 min-h-[36px] text-sm rounded-md transition-colors {% if not tag_param %}bg-blue-600 text-white{% else %}bg-slate-700 text-slate-300 hover:bg-slate-600{% endif %}">All</a>
+    {% for tag in tags %}
+    <a href="/notes?tag={{ tag }}" class="px-3 py-1.5 min-h-[36px] text-sm rounded-md transition-colors {% if tag_param == tag %}bg-blue-600 text-white{% else %}bg-slate-700 text-slate-300 hover:bg-slate-600{% endif %}">{{ tag }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Notes grid -->
+<div class="grid gap-4 grid-cols-1 sm:grid-cols-2">
+    {% for note in notes %}
+    <a href="/note/{{ note.url_slug }}" class="block bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 hover:border-slate-500 transition-colors">
+        <h3 class="font-semibold text-base sm:text-lg text-slate-100 mb-1.5">{{ note.display_title }}</h3>
+        {% if note.preview_body %}
+        <p class="text-sm sm:text-base text-slate-400 line-clamp-2 leading-relaxed">{{ note.preview_body }}</p>
+        {% endif %}
+        {% if note.all_tags %}
+        <div class="flex flex-wrap gap-1.5 mt-3">
+            {% for tag in note.all_tags %}
+            <span class="text-xs px-2 py-0.5 bg-slate-700 text-slate-400 rounded">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% if not notes %}
+<p class="text-sm text-slate-500 text-center py-8">No notes found{% if tag_param %} with tag "{{ tag_param }}"{% endif %}.</p>
+{% endif %}
+{% endblock %}

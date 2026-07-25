@@ -1,0 +1,39 @@
+contents_dir: 1 Everything/2 Contents
+notes_dir: 1 Everything/0 Notes
+services:
+  Hermes Agent:
+    check: process
+    process_name: hermes dashboard
+    url: http://192.168.1.17:9119
+    public_url: https://hermes.thonystank.dpdns.org
+    proxied: false
+    tailscale_only: false
+    description: My Hermes Agent configuration dashboard
+  Immich:
+    port: 2283
+    url: http://192.168.1.17:2283
+    public_url: https://photos.thonystank.dpdns.org
+    proxied: false
+    tailscale_only: false
+    description: My self-hosted personal Google Photo alternative
+  Mnemosyne:
+    port: 8765
+    url: http://192.168.1.17:8765
+    public_url: https://memory.thonystank.dpdns.org
+    proxied: false
+    tailscale_only: false
+    display_name: "Memory (mnemosyne)"
+    description: Mnemosyne memory visualization for my Hermes Agent
+  Proxmox:
+    port: 8006
+    url: https://192.168.1.16:8006
+    proxied: false
+    tailscale_only: true
+    description: My main homelab OS hosted on an old laptop where I host various services like Ubuntu Server, Tailscale VPN, and VMs
+  Syncthing:
+    port: 8384
+    url: http://192.168.1.17:8384
+    proxied: false
+    tailscale_only: true
+    description: File synchronization across my personal devices
+vault_root: /home/tony/SyncProxmox/ObsidianVaults/GroundZero
