@@ -1,0 +1,46 @@
+{
+  "name": "Anthony Dayrit",
+  "headline": "AI Software Developer and Researcher | BS Computer Science | Web/Mobile/Game Developer | DOST-SEI Merit Scholar",
+  "about": "",
+  "location": "Angeles, Central Luzon, Philippines",
+  "connections": 87,
+  "experience": [
+    {
+      "title": "AI Software Developer / Researcher",
+      "company": "DOST-Advanced Science and Technology Institute",
+      "type": "Full-time",
+      "dates": "",
+      "description": "AI research and software development at the Department of Science and Technology"
+    },
+    {
+      "title": "Intern",
+      "company": "Don Honorio Ventura Technological State University",
+      "type": "",
+      "dates": "2022 - 2026",
+      "description": "BS Computer Science program"
+    }
+  ],
+  "education": [
+    {
+      "school": "Don Honorio Ventura Technological State University",
+      "degree": "Bachelor of Science in Computer Science",
+      "field": "Computer Science",
+      "dates": "2022 - 2026",
+      "notes": "DOST-SEI Merit Scholar"
+    }
+  ],
+  "skills": [
+    "Artificial Intelligence",
+    "Machine Learning",
+    "Deep Learning",
+    "Python",
+    "Web Development",
+    "Mobile Development",
+    "Game Development",
+    "Research",
+    "Software Engineering"
+  ],
+  "certifications": [],
+  "attachments": [],
+  "last_updated": "2026-07-29"
+}

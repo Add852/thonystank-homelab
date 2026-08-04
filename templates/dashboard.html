@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Thony Stank Homelab{% endblock %}
+{% block meta_description %}Service dashboard — monitor homelab services, status, and links.{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/index.css">
+{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+    <div class="flex items-center gap-3 mb-1">
+        <i class="fas fa-server text-blue-400 text-xl"></i>
+        <h2 class="text-xl sm:text-3xl font-bold text-slate-100">Service Dashboard</h2>
+    </div>
+    {% set online_count = namespace(val=0) %}
+    {% for name, info in services.items() %}
+      {% if info.status.startswith('Online') %}
+        {% set online_count.val = online_count.val + 1 %}
+      {% endif %}
+    {% endfor %}
+    <p class="text-sm text-slate-500 ml-0.5">
+        <span class="text-slate-300 font-medium">{{ online_count.val }}</span> / {{ services | length }} online
+    </p>
+</div>
+
+<div class="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+    {% for name, info in services.items() %}
+    <div class="bg-slate-800 rounded-xl border border-slate-700 flex flex-col">
+
+        {% if info.check_type == "group" and info.group_entries %}
+            {# GROUP CARD: table layout #}
+            <div class="flex-1 p-4 sm:p-5 flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <i class="fas fa-coins text-yellow-400 text-lg shrink-0"></i>
+                        <h3 class="font-semibold text-base sm:text-lg text-slate-100 truncate">{{ info.display_name | default(name) }}</h3>
+                    </div>
+                    <span class="text-xs sm:text-sm font-medium px-2 py-0.5 rounded-full inline-flex items-center shrink-0 {% if info.status.startswith('Online') %}bg-green-900 text-green-300{% elif info.status.startswith('Partial') %}bg-yellow-900 text-yellow-300{% else %}bg-red-900 text-red-300{% endif %}">
+                        <span class="status-dot {% if info.status.startswith('Online') %}online{% elif info.status.startswith('Partial') %}partial{% else %}offline{% endif %}"></span>
+                        {{ info.status }}
+                    </span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-slate-300 border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-700 text-slate-500 text-left">
+                                <th class="pb-1.5 pr-2 font-medium">Service</th>
+                                <th class="pb-1.5 font-medium w-16">Status</th>
+                                <th class="pb-1.5 font-medium w-10"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in info.group_entries %}
+                            <tr class="border-b border-slate-700/50 last:border-0">
+                                <td class="py-1.5 pr-2 text-slate-300 truncate max-w-[140px]">
+                                    {{ c.short_name }}
+                                </td>
+                                <td class="py-1.5">
+                                    {% if c.online %}
+                                    <span class="inline-flex items-center gap-1 text-green-400">
+                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                                        Running
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center gap-1 text-red-400">
+                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                                        Off
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-1.5 text-center">
+                                    {% if c.link_url %}
+                                    <a href="{{ c.link_url }}" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors" title="Open dashboard">
+                                        <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                        </svg>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        {% else %}
+            {# NORMAL CARD #}
+            <div class="flex-1 p-4 sm:p-5 flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 min-w-0">
+                        {% if info.icon_url %}
+                        <img src="{{ info.icon_url }}" alt="{{ info.display_name | default(name) }}" class="service-icon-img" loading="lazy" />
+                        {% else %}
+                        <i class="fas {{ info.icon | default('fa-cube') }} text-blue-400 text-lg shrink-0"></i>
+                        {% endif %}
+                        <h3 class="font-semibold text-base sm:text-lg text-slate-100 truncate">{{ info.display_name | default(name) }}</h3>
+                    </div>
+                    <span class="text-xs sm:text-sm font-medium px-2 py-0.5 rounded-full inline-flex items-center shrink-0 {% if info.status.startswith('Online') %}bg-green-900 text-green-300{% elif info.status.startswith('Partial') %}bg-yellow-900 text-yellow-300{% else %}bg-red-900 text-red-300{% endif %}">
+                        <span class="status-dot {% if info.status.startswith('Online') %}online{% elif info.status.startswith('Partial') %}partial{% else %}offline{% endif %}"></span>
+                        {{ info.status }}
+                    </span>
+                </div>
+                {% if info.description %}
+                <p class="text-sm sm:text-base text-slate-400 leading-relaxed">{{ info.description }}</p>
+                {% endif %}
+            </div>
+            {% if info.url %}
+            <div class="border-t border-slate-700 px-4 sm:px-5 py-3 flex items-center gap-3">
+                {% if info.port %}
+                <span class="text-[11px] font-mono text-slate-500 bg-slate-900/60 px-2 py-0.5 rounded border border-slate-700">:{{ info.port }}</span>
+                {% endif %}
+                <div class="flex-1"></div>
+                {% if info.public_url and info.status == 'Online' %}
+                <a href="{{ info.url }}" target="_blank" class="btn-vpn text-sm">VPN Access</a>
+                <a href="{{ info.public_url }}" target="_blank" class="btn-open text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    Open Service
+                </a>
+                {% else %}
+                <a href="{{ info.url }}" target="_blank" class="btn-vpn text-sm">VPN Access</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

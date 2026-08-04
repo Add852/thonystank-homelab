@@ -1,0 +1,16 @@
+{% macro star_rating(rating, size="text-sm") -%}
+{% set sf = rating / 2 %}
+{% for i in range(5) %}
+{% if i + 1 <= sf %}
+<span class="star {{ size }}">★</span>
+{% elif i < sf and i + 1 > sf %}
+{% set pct = ((sf - i) * 100) | round %}
+<span style="position:relative;display:inline-block;width:1em;height:1em;line-height:1;vertical-align:text-bottom;">
+    <span style="color:#475569;">★</span>
+    <span style="position:absolute;left:0;top:0;overflow:hidden;width:{{ pct }}%;color:#facc15;">★</span>
+</span>
+{% else %}
+<span class="star {{ size }} empty">★</span>
+{% endif %}
+{% endfor %}
+{%- endmacro %}

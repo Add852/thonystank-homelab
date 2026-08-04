@@ -75,13 +75,19 @@ def client(temp_vault, monkeypatch):
 
     monkeypatch.setenv("SERVER_DASHBOARD_CONFIG", str(cfg_path))
 
-    # Clear content cache before each test
-    import server_dashboard.content_service as cs
+    # Import from project root (directory has hyphen — Python can't import
+    # 'thonystank-homelab' as a package, so we add project root to path)
+    import sys
+    import os
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if project_dir not in sys.path:
+        sys.path.insert(0, project_dir)
+
+    import content_service as cs
     cs._CONTENT_CACHE.clear()
 
-    # Import main AFTER env var is set
     import importlib
-    import server_dashboard.main as main_mod
+    import main as main_mod
     importlib.reload(main_mod)
 
     return TestClient(main_mod.app)

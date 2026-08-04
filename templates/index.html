@@ -3,81 +3,78 @@
 {% block title %}Thony Stank Homelab{% endblock %}
 
 {% block head_extra %}
-<style>
-    .status-dot {
-        display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px;
-        animation: pulse 2s infinite;
-    }
-    .status-dot.online  { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
-    .status-dot.offline { background: #ef4444; box-shadow: 0 0 6px #ef444488; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-    .btn-open {
-        display: inline-flex; align-items: center; gap: 6px;
-        font-weight: 500; padding: 8px 14px; min-height: 40px;
-        border-radius: 8px; background: #334155; color: #e2e8f0;
-        transition: background .15s; white-space: nowrap;
-    }
-    .btn-open:hover { background: #2563eb; color: #fff; }
-    .btn-vpn {
-        color: #94a3b8;
-        padding: 8px 0; min-height: 40px; display: inline-flex; align-items: center;
-    }
-    .service-icon-img {
-        width: 24px; height: 24px; object-fit: contain; flex-shrink: 0;
-    }
-</style>
+<link rel="stylesheet" href="/static/css/index.css">
 {% endblock %}
 
 {% block content %}
-<div class="mb-6">
-    <div class="flex items-center gap-3 mb-1">
-        <i class="fas fa-server text-blue-400 text-xl"></i>
-        <h2 class="text-xl sm:text-3xl font-bold text-slate-100">Dashboard</h2>
+<!-- Hero -->
+<div class="mb-10 bg-slate-800/50 rounded-xl border border-slate-700 p-6 sm:p-8">
+    <div class="flex items-center gap-4 mb-4">
+        <div class="text-3xl sm:text-4xl"><i class="fas fa-home text-blue-400"></i></div>
+        <h1 class="text-2xl sm:text-4xl font-bold text-slate-100">Thony Stank Homelab</h1>
     </div>
-    {% set online = services.values() | selectattr('status', 'equalto', 'Online') | list | length %}
-    <p class="text-sm text-slate-500 ml-0.5">
-        <span class="text-slate-300 font-medium">{{ online }}</span> / {{ services | length }} online
+    <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-2xl">
+        Hey, I'm <strong class="text-slate-200">Ant</strong> — this is my self-hosted corner of the internet.
+        Homelab services, Obsidian notes, media reviews, and a bit about me.
+        All hand-built, all mine.
     </p>
 </div>
 
-<div class="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-    {% for name, info in services.items() %}
-    <div class="bg-slate-800 rounded-xl border border-slate-700 flex flex-col">
-        <div class="flex-1 p-4 sm:p-5 flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 min-w-0">
-                    {% if info.icon_url %}
-                    <img src="{{ info.icon_url }}" alt="{{ info.display_name | default(name) }}" class="service-icon-img" loading="lazy" />
-                    {% else %}
-                    <i class="fas {{ info.icon | default('fa-cube') }} text-blue-400 text-lg shrink-0"></i>
-                    {% endif %}
-                    <h3 class="font-semibold text-base sm:text-lg text-slate-100 truncate">{{ info.display_name | default(name) }}</h3>
-                </div>
-                <span class="text-xs sm:text-sm font-medium px-2 py-0.5 rounded-full inline-flex items-center shrink-0 bg-{% if info.status == 'Online' %}green-900 text-green-300{% else %}red-900 text-red-300{% endif %}">
-                    <span class="status-dot {% if info.status == 'Online' %}online{% else %}offline{% endif %}"></span>
-                    {{ info.status }}
-                </span>
+<!-- Service Summary -->
+{% set online = services.values() | selectattr('status', 'equalto', 'Online') | list | length %}
+{% set total = services | length %}
+{% set status_color = 'text-green-400' if online == total else 'text-yellow-400' if online > 0 else 'text-red-400' %}
+
+<a href="/dashboard" class="block bg-slate-800/40 rounded-xl border border-slate-700/50 p-5 hover:border-slate-500 hover:bg-slate-800/60 transition-all group mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h3 class="font-semibold text-slate-200 group-hover:text-blue-400 transition mb-1">
+                <i class="fas fa-server mr-2 text-blue-400"></i>Service Dashboard
+            </h3>
+            <p class="text-xs text-slate-500">All my self-hosted services — status, links, access</p>
+        </div>
+        <div class="text-right">
+            <div class="text-lg font-bold {{ 'text-green-400' if online == total else 'text-yellow-400' if online > 0 else 'text-red-400' }}">
+                {{ online }}/{{ total }}
             </div>
-            {% if info.description %}
-            <p class="text-sm sm:text-base text-slate-400 leading-relaxed">{{ info.description }}</p>
-            {% endif %}
+            <div class="text-xs text-slate-500">online</div>
         </div>
-        {% if info.url %}
-        <div class="border-t border-slate-700 px-4 sm:px-5 py-3 flex justify-end items-center gap-3">
-            {% if info.public_url and info.status == 'Online' %}
-            <a href="{{ info.url }}" target="_blank" class="btn-vpn text-sm">VPN Access</a>
-            <a href="{{ info.public_url }}" target="_blank" class="btn-open text-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-                Open Service
-            </a>
-            {% else %}
-            <a href="{{ info.url }}" target="_blank" class="btn-vpn text-sm">VPN Access</a>
-            {% endif %}
-        </div>
-        {% endif %}
     </div>
-    {% endfor %}
+</a>
+
+<!-- Page Previews -->
+<div class="mb-4">
+    <h2 class="text-xl sm:text-2xl font-bold text-slate-100 mb-1">Explore</h2>
+    <p class="text-sm text-slate-500 mb-5">What else lives here</p>
 </div>
+
+<div class="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+    <!-- Notes -->
+    <a href="/notes" class="bg-slate-800/40 rounded-xl border border-slate-700/50 p-5 hover:border-slate-500 hover:bg-slate-800/60 transition-all group">
+        <div class="text-2xl mb-3"><i class="fas fa-sticky-note text-yellow-400"></i></div>
+        <h3 class="font-semibold text-slate-200 group-hover:text-yellow-400 transition mb-1">Notes</h3>
+        <p class="text-xs text-slate-500 leading-relaxed">
+            Obsidian-powered notes — thoughts, knowledge, links. Tag-filtered, searchable.
+        </p>
+    </a>
+
+    <!-- Reviews -->
+    <a href="/reviews" class="bg-slate-800/40 rounded-xl border border-slate-700/50 p-5 hover:border-slate-500 hover:bg-slate-800/60 transition-all group">
+        <div class="text-2xl mb-3">{% from "partials/macros.html" import star_rating with context %}{{ star_rating(8, "text-lg") }}</div>
+        <h3 class="font-semibold text-slate-200 group-hover:text-yellow-400 transition mb-1">Reviews</h3>
+        <p class="text-xs text-slate-500 leading-relaxed">
+            Media reviews — movies, shows, games. Sorted, rated, written by me.
+        </p>
+    </a>
+
+    <!-- About -->
+    <a href="/about" class="bg-slate-800/40 rounded-xl border border-slate-700/50 p-5 hover:border-slate-500 hover:bg-slate-800/60 transition-all group">
+        <div class="text-2xl mb-3"><i class="fas fa-user text-blue-400"></i></div>
+        <h3 class="font-semibold text-slate-200 group-hover:text-blue-400 transition mb-1">About / Portfolio</h3>
+        <p class="text-xs text-slate-500 leading-relaxed">
+            GitHub repos, LinkedIn synced profile — who I am and what I've built.
+        </p>
+    </a>
+</div>
+
 {% endblock %}

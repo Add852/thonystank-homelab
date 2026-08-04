@@ -69,6 +69,7 @@ def _parse_note(path: str) -> Optional[Note]:
         content_html=render_markdown(preview),
         content=body,
         created=format_created(meta.get("created", "")),
+        created_ts=parse_created_ts(meta.get("created", "")),
         tags=display_tags,
         all_tags=all_tags,
     )
@@ -83,7 +84,7 @@ def get_note_by_slug(vault_root: str, notes_dir: str, slug: str) -> Optional[Not
             continue
         if slug_from_filename(fn) == slug:
             path = os.path.join(notes_dir_path, fn)
-            return _parse_note(path)
+            return _get_cached(path, lambda p: _parse_note(p))
     return None
 
 

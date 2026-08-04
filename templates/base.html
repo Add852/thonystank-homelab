@@ -4,28 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Thony Stank Homelab{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Thony Stank Homelab — personal dashboard, notes, and reviews by Ant.{% endblock %}">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ThonyStank">
+    <link rel="manifest" href="/manifest.json">
+    <meta property="og:title" content="{% block og_title %}Thony Stank Homelab{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Thony Stank Homelab — personal dashboard, notes, and reviews by Ant.{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:image" content="{% block og_image %}/static/favicon.svg{% endblock %}">
+    <meta name="twitter:card" content="summary">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-        .nav-link { min-height: 44px; display: inline-flex; align-items: center; padding-left: 12px; padding-right: 12px; }
-        .nav-link-mobile { min-height: 44px; display: flex; align-items: center; }
-        @media (max-width: 767px) {
-            .nav-links-mobile {
-                position: fixed; top: 56px; right: 8px; width: 200px;
-                background: #1e293b; border: 1px solid #334155;
-                border-radius: 12px; padding: 4px; z-index: 100;
-                box-shadow: 0 10px 25px rgba(0,0,0,.5);
-            }
-        }
-        .prose h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .prose h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
-        .prose p  { margin-bottom: 0.75rem; line-height: 1.7; }
-        .prose ul { list-style: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
-        .prose img { max-width: 100%; height: auto; border-radius: 8px; }
-        .modal-close { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
-    </style>
+    <link rel="stylesheet" href="/static/css/global.css?v=4">
     {% block head_extra %}{% endblock %}
 </head>
 <body class="bg-slate-900 text-slate-200 min-h-screen">

@@ -11,6 +11,7 @@ class Note:
     content_html: str
     content: str
     created: str
+    created_ts: int = 0
     tags: List[str] = field(default_factory=list)
     all_tags: List[str] = field(default_factory=list)
 

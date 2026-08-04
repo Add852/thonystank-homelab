@@ -6,10 +6,9 @@ services:
     process_name: hermes dashboard
     port: 9119
     url: http://192.168.1.17:9119
-    public_url: https://hermes.thonystank.dpdns.org
     proxied: false
-    tailscale_only: false
-    description: My Hermes Agent configuration dashboard
+    tailscale_only: true
+    description: AI agent platform — personal assistant, dashboard, and messaging gateway
     icon_url: https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/hermesagent.svg
   Immich:
     port: 2283
@@ -17,7 +16,7 @@ services:
     public_url: https://photos.thonystank.dpdns.org
     proxied: false
     tailscale_only: false
-    description: My self-hosted personal Google Photo alternative
+    description: Self-hosted photo and video backup — Google Photos alternative
     icon_url: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/immich.svg
   Mnemosyne:
     port: 8765
@@ -25,29 +24,71 @@ services:
     public_url: https://memory.thonystank.dpdns.org
     proxied: false
     tailscale_only: false
-    display_name: "Memory (mnemosyne)"
-    description: Mnemosyne memory visualization for my Hermes Agent
+    description: AI memory dashboard — visualize and manage Hermes Agent's persistent knowledge
     icon: fa-brain
   Proxmox:
     port: 8006
     url: https://192.168.1.16:8006
     proxied: false
     tailscale_only: true
-    description: My main homelab OS hosted on an old laptop where I host various services like Ubuntu Server, Tailscale VPN, and VMs
+    description: Homelab hypervisor — hosts Ubuntu Server VM, Tailscale VPN, and all services on an old laptop
     icon_url: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/proxmox.svg
-  "9Router":
+  9Router:
     port: 20128
-    url: http://192.168.1.17:20128/dashboard/usage
+    url: http://192.168.1.17:20128
     proxied: false
-    tailscale_only: false
-    display_name: "9Router"
-    icon: fa-route
-    description: Model routing gateway — freethinker/freetasker selection
+    tailscale_only: true
+    description: AI provider router — single endpoint for all LLM providers, key management, and usage analytics
+    icon: fa-random
   Syncthing:
     port: 8384
     url: http://192.168.1.17:8384
     proxied: false
     tailscale_only: true
-    description: File synchronization across my personal devices
+    description: Continuous file sync across laptop, phone, and server
     icon_url: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/syncthing.svg
+  Job Ops:
+    port: 3005
+    url: http://192.168.1.17:3005
+    proxied: false
+    tailscale_only: true
+    description: "AI job search — search, score, tailor, and track applications across 13+ job boards"
+    icon: fa-briefcase
+  code-server:
+    port: 8443
+    url: http://192.168.1.17:8443
+    proxied: false
+    tailscale_only: true
+    description: VS Code in the browser for remote development — password-protected
+    icon_url: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/code-server.svg
+  Passive Income:
+    port: null
+    url: null
+    check: group
+    group_containers:
+      - passive-income-bitping
+      - passive-income-traffmonetizer
+      - passive-income-repocket
+      - passive-income-packetstream
+      - passive-income-proxyrack
+    container_links:
+      bitping: https://nodes.bitping.com/dashboard
+      traffmonetizer: https://app.traffmonetizer.com/dashboard
+      repocket: https://repocket.com/dashboard/share-internet
+      packetstream: https://app.packetstream.io/dashboard
+      proxyrack: https://peer.proxyrack.com
+    proxied: false
+    tailscale_only: false
+    description: Passive income earning services — Bitping, TraffMonetizer, and more
+    icon: fa-coins
 vault_root: /home/tony/SyncProxmox/ObsidianVaults/GroundZero
+
+github:
+  username: "Add852"
+  cache_ttl_minutes: 15
+
+linkedin:
+  mode: "json"
+  profile_url: "https://www.linkedin.com/in/anthony-dayrit-785284371"
+  json_path: "linkedin_profile.json"
+  yaml_path: "linkedin_profile.yaml"

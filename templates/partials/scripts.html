@@ -1,4 +1,5 @@
 <script>
+/* ── Mobile menu toggle ── */
 function toggleMobileMenu() {
     const menu = document.getElementById('mobileMenu');
     if (!menu) return;
@@ -23,4 +24,203 @@ document.addEventListener('click', function(e) {
         if (xmark) xmark.classList.add('hidden');
     }
 });
+
+/* PWA Service Worker */
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then((reg) => console.log('SW registered:', reg.scope))
+            .catch((err) => console.warn('SW registration failed:', err));
+    });
+}
+
+
+/* ── Skeleton map: path prefix → skeleton page key ── */
+const SKELETON_KEYS = {
+    '/': '',
+    '/about': 'about',
+    '/dashboard': 'dashboard',
+    '/notes': 'notes',
+    '/reviews': 'reviews',
+    '/note': 'note',
+};
+
+/* ── Preload skeletons into hidden <template> tags on page load ── */
+(function() {
+    const seen = {};
+    const paths = Object.keys(SKELETON_KEYS);
+    const fragments = document.createDocumentFragment();
+
+    paths.forEach(function(path) {
+        const key = SKELETON_KEYS[path];
+        if (!key && key !== '') return;
+        if (seen[key]) return;
+        seen[key] = true;
+
+        const el = document.createElement('template');
+        el.id = 'skeleton-' + (key || 'home');
+        fragments.appendChild(el);
+    });
+    document.body.appendChild(fragments);
+
+    // Fetch skeletons in parallel
+    var uniqueKeys = Object.keys(seen);
+    uniqueKeys.forEach(function(key) {
+        var url;
+        if (key === '') {
+            url = '/api/skeleton/__root__';
+        } else if (key === 'note') {
+            url = '/api/skeleton/notes';
+        } else {
+            url = '/api/skeleton/' + key;
+        }
+
+        fetch(url).then(function(r) { return r.text(); }).then(function(html) {
+            var targetId;
+            if (key === 'note') targetId = 'skeleton-notes';
+            else targetId = 'skeleton-' + (key || 'home');
+            var tmpl = document.getElementById(targetId);
+            if (tmpl) {
+                tmpl.innerHTML = html;
+            }
+        }).catch(function() {});
+    });
+})();
+
+
+/* ── Turbo-style navigation with skeleton preload ── */
+(function() {
+    function isInternal(href) {
+        try {
+            var u = new URL(href, location.origin);
+            return u.origin === location.origin && !href.startsWith('#') && !href.includes('/static/attachments/');
+        } catch(e) { return false; }
+    }
+
+    function updateNav(path) {
+        var links = document.querySelectorAll('#desktop-nav .nav-link, #mobileMenu .nav-link-mobile');
+        links.forEach(function(link) {
+            var href = link.getAttribute('href');
+            if (!href) return;
+            var active = href === path ||
+                (path.startsWith('/note') && href === '/notes') ||
+                (path.startsWith('/reviews') && href === '/reviews');
+            link.classList.toggle('nav-active', active);
+        });
+    }
+
+    function getSkeletonKey(path) {
+        // Exact match
+        if (SKELETON_KEYS[path] !== undefined) return SKELETON_KEYS[path];
+        // Prefix match for /note/...
+        if (path.startsWith('/note')) return 'note';
+        return null;
+    }
+
+    async function navigateTo(url, pushState) {
+        var main = document.querySelector('main');
+        if (!main) { location.href = url; return; }
+
+        // Close mobile menu if open
+        var mobileMenu = document.getElementById('mobileMenu');
+        if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+            mobileMenu.classList.add('hidden');
+            var bars = document.getElementById('menuBars');
+            var xmark = document.getElementById('menuXmark');
+            if (bars) bars.classList.remove('hidden');
+            if (xmark) xmark.classList.add('hidden');
+        }
+
+        var path = new URL(url, location.origin).pathname;
+        updateNav(path);
+        document.title = '...';
+
+        // ── Phase 1: show skeleton instantly ──
+        var skKey = getSkeletonKey(path);
+        var templateId = 'skeleton-' + (skKey || 'home');
+        if (skKey === '') templateId = 'skeleton-home';
+        var tmpl = document.getElementById(templateId);
+
+        if (tmpl && tmpl.innerHTML) {
+            var clone = document.importNode(tmpl.content, true);
+            main.innerHTML = '';
+            main.appendChild(clone);
+            main.style.opacity = '0.7';
+        } else {
+            main.style.opacity = '0.4';
+        }
+        main.style.transition = 'opacity 80ms';
+
+        try {
+            document.querySelectorAll('[data-turbo]').forEach(function(el) { el.remove(); });
+
+            // ── Phase 2: fetch real page ──
+            var resp = await fetch(url);
+            if (!resp.ok || resp.redirected) throw new Error('redirect');
+            var html = await resp.text();
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+
+            var newMain = doc.querySelector('main');
+            if (!newMain) throw new Error('no main');
+
+            // Swap real content (smooth — skeleton was already showing)
+            main.innerHTML = newMain.innerHTML;
+
+            // Inject page-specific stylesheets
+            doc.querySelectorAll('head link[rel="stylesheet"], head style').forEach(function(el) {
+                var href = el.getAttribute('href') || '';
+                var id = 'turbo-style-' + href.replace(/[^a-z0-9]/gi, '-');
+                if (!document.getElementById(id)) {
+                    var clone = el.cloneNode(true);
+                    clone.id = id;
+                    clone.setAttribute('data-turbo', 'true');
+                    document.head.appendChild(clone);
+                }
+            });
+
+            // Execute new scripts
+            main.querySelectorAll('script').forEach(function(oldScript) {
+                var newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(function(attr) {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+                newScript.textContent = oldScript.textContent;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+
+            main.style.opacity = '1';
+
+            if (window.tailwind && window.tailwind.refresh) {
+                window.tailwind.refresh();
+            }
+
+            var newTitle = doc.querySelector('title');
+            if (newTitle) document.title = newTitle.textContent;
+
+            if (pushState !== false) {
+                history.pushState({url: url}, '', url);
+            }
+        } catch(e) {
+            location.href = url;
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        var link = e.target.closest('a');
+        if (!link) return;
+        var href = link.getAttribute('href');
+        if (!href || !isInternal(href)) return;
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.which === 2) return;
+        e.preventDefault();
+        navigateTo(href);
+    });
+
+    window.addEventListener('popstate', function(e) {
+        if (e.state && e.state.url) {
+            navigateTo(e.state.url, false);
+        }
+    });
+
+    updateNav(location.pathname);
+})();
 </script>

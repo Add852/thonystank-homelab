@@ -1,77 +1,74 @@
 {% extends "base.html" %}
+{% from "partials/macros.html" import star_rating with context %}
 
 {% block title %}Reviews{% endblock %}
 
 {% block head_extra %}
-<style>
-    .review-card { transition: transform .2s; }
-    .review-card:active { transform: scale(.98); }
-    .tab-btn {
-        padding: 8px 18px; border-radius: 8px; font-size: 0.875rem; font-weight: 500;
-        cursor: pointer; transition: all .15s; border: none;
-        background: #334155; color: #94a3b8;
-    }
-    .tab-btn:hover { background: #475569; color: #e2e8f0; }
-    .tab-btn.active { background: #2563eb; color: #fff; }
-    .sort-btn {
-        padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 500;
-        cursor: pointer; transition: all .15s; border: 1px solid #334155;
-        background: transparent; color: #64748b;
-    }
-    .sort-btn:hover { border-color: #475569; color: #cbd5e1; }
-    .sort-btn.active { border-color: #2563eb; color: #60a5fa; }
-    .sort-btn .arrow { margin-left: 4px; font-size: 0.65rem; }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-    .tab-panel .grid { overflow-y: auto; }
-    .modal-overlay {
-        position: fixed; inset: 0; z-index: 50;
-        background: rgba(0,0,0,.7); padding: 12px;
-        display: none;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal-content {
-        background: #1e293b; border: 1px solid #334155;
-        border-radius: 12px; max-width: 640px; width: 100%;
-        max-height: 90vh; overflow-y: auto;
-        margin: auto; padding: 20px;
-        -webkit-overflow-scrolling: touch;
-    }
-    .modal-content::-webkit-scrollbar { width: 4px; }
-    .modal-content::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
-    .star { color: #facc15; }
-    .star.empty { color: #475569; }
-</style>
+<link rel="stylesheet" href="/static/css/reviews.css?v=2">
 {% endblock %}
 
 {% block content %}
-<div class="flex items-center gap-2 mb-6">
-    <i class="fas fa-star text-blue-400 text-xl"></i>
-    <h2 class="text-xl sm:text-3xl font-bold text-slate-100">Reviews</h2>
-</div>
 
-<!-- Tabs (bar only, no global sort) -->
-<div class="flex flex-wrap gap-2 mb-5">
-    <button class="tab-btn active" onclick="switchTab('movies')" data-tab="movies"><i class="fas fa-film mr-1.5"></i>Movies</button>
-    <button class="tab-btn" onclick="switchTab('series')" data-tab="series"><i class="fas fa-tv mr-1.5"></i>Series</button>
-    <button class="tab-btn" onclick="switchTab('books')" data-tab="books"><i class="fas fa-book mr-1.5"></i>Books</button>
-</div>
-
-{% for cat in ['movies', 'series', 'books'] %}
-{% set items = reviews.get(cat, []) %}
-<div id="tab-{{ cat }}" class="tab-panel {% if loop.first %}active{% endif %}">
-    <!-- Per-tab sort -->
-    <div class="flex gap-2 mb-5">
-        <button class="sort-btn active" onclick="toggleSort('{{ cat }}', 'date')" data-cat="{{ cat }}" data-sort="date">Date <span class="arrow">▼</span></button>
-        <button class="sort-btn" onclick="toggleSort('{{ cat }}', 'rating')" data-cat="{{ cat }}" data-sort="rating">Rating <span class="arrow">▼</span></button>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+    <div class="flex items-center gap-2">
+        <i class="fas fa-star text-blue-400 text-xl"></i>
+        <h2 class="text-xl sm:text-3xl font-bold text-slate-100">Reviews</h2>
     </div>
 
+    <!-- Search bar -->
+    <div class="relative w-full sm:w-64">
+        <input type="text" id="review-search" placeholder="Search reviews..."
+               class="w-full bg-slate-800/50 border border-slate-600 rounded-lg px-3 py-2 pl-9 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+               autocomplete="off">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+    </div>
+</div>
+
+<!-- Filter bar: category dropdown + sort toggles -->
+<div class="flex flex-wrap items-center gap-3 mb-5">
+
+    <!-- Category dropdown -->
+    <div class="relative group">
+        <button id="cat-dropdown-btn" onclick="toggleCatDropdown()"
+                class="flex items-center gap-2 px-3 py-2 text-sm bg-slate-800 border border-slate-600 rounded-lg text-slate-300 hover:border-slate-500 transition-colors">
+            <i class="fas fa-film text-blue-400 text-xs"></i>
+            <span id="current-cat-label">Movies</span>
+            <i class="fas fa-chevron-down text-slate-500 text-[10px]"></i>
+        </button>
+        <div id="cat-dropdown" class="hidden absolute z-30 mt-1 w-44 bg-slate-800 border border-slate-600 rounded-lg shadow-xl">
+            <button onclick="selectCategory('movies')" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-700 text-blue-400 font-semibold bg-slate-700/50">
+                <i class="fas fa-film mr-1.5"></i>Movies
+            </button>
+            <button onclick="selectCategory('series')" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-700 text-slate-300">
+                <i class="fas fa-tv mr-1.5"></i>Series
+            </button>
+            <button onclick="selectCategory('books')" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-700 text-slate-300">
+                <i class="fas fa-book mr-1.5"></i>Books
+            </button>
+        </div>
+    </div>
+
+    <!-- Sort toggle (unified: icons + asc/desc) -->
+    <div class="flex gap-2 ml-auto">
+        <button onclick="toggleSort('date')" class="sort-btn active" data-sort="date">
+            <i class="fas fa-clock"></i> Date <span class="arrow">▼</span>
+        </button>
+        <button onclick="toggleSort('rating')" class="sort-btn" data-sort="rating">
+            <i class="fas fa-star"></i> Rating <span class="arrow">▼</span>
+        </button>
+    </div>
+</div>
+
+<!-- Cards grid for ALL categories (hidden/shown via JS) -->
+{% for cat in ['movies', 'series', 'books'] %}
+{% set items = reviews.get(cat, []) %}
+<div id="cat-{{ cat }}" class="cat-panel{% if loop.first %}{% else %} hidden{% endif %}">
     {% if items %}
     <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {% for r in items %}
         <div class="review-card bg-slate-800 rounded-xl border border-slate-700 p-4 cursor-pointer"
-             data-rating="{{ r.rating }}" data-date="{{ r.created_ts }}"
-             onclick='openModal({
+             data-rating="{{ r.rating }}" data-date="{{ r.created_ts }}" data-category="{{ cat }}"
+             onclick='showModal({
                  title: {{ r.title | tojson }},
                  creator: {{ r.creator | tojson }},
                  rating: {{ r.rating }},
@@ -89,20 +86,7 @@
                     <h4 class="font-semibold text-base text-slate-100 truncate">{{ r.title }}</h4>
                     <p class="text-sm text-slate-400 truncate">{{ r.creator }}</p>
                     <div class="flex items-center gap-0.5 mt-1.5">
-                        {% set sf = r.rating / 2 %}
-                        {% for i in range(5) %}
-                        {% if i + 1 <= sf %}
-                        <span class="star text-sm">★</span>
-                        {% elif i < sf and i + 1 > sf %}
-                        {% set pct = ((sf - i) * 100) | round %}
-                        <span style="position:relative;display:inline-block;width:1em;height:1em;line-height:1;vertical-align:text-bottom;">
-                            <span style="color:#475569;">★</span>
-                            <span style="position:absolute;left:0;top:0;overflow:hidden;width:{{ pct }}%;color:#facc15;">★</span>
-                        </span>
-                        {% else %}
-                        <span class="star text-sm empty">★</span>
-                        {% endif %}
-                        {% endfor %}
+                        {{ star_rating(r.rating) }}
                     </div>
                     {% if r.created %}
                     <p class="text-xs text-slate-500 mt-1">{{ r.created }}</p>
@@ -143,46 +127,52 @@
 </div>
 
 <script>
+(function() {
     // Per-category sort state
-    const sortState = {};
+    var sortState = {};
+    var currentCat = 'movies';
+    var currentSort = 'date';
+    var sortAsc = false;
 
-    function openModal(data) {
+    // ── Modal ──
+
+    function showModal(data) {
         document.getElementById('modalTitle').textContent = data.title;
         document.getElementById('modalCreator').textContent = data.creator;
         document.getElementById('modalGenres').textContent = data.genres || '';
         document.getElementById('modalDate').textContent = data.created || '';
 
-        const starsEl = document.getElementById('modalStars');
+        var starsEl = document.getElementById('modalStars');
         starsEl.innerHTML = '';
-        const sf = data.rating / 2;
-        for (let i = 0; i < 5; i++) {
+        var sf = data.rating / 2;
+        for (var i = 0; i < 5; i++) {
             if (i + 1 <= sf) {
-                const s = document.createElement('span');
+                var s = document.createElement('span');
                 s.className = 'star text-sm';
                 s.textContent = '\u2605';
                 starsEl.appendChild(s);
             } else if (i < sf && i + 1 > sf) {
-                const pct = Math.round((sf - i) * 100);
-                const wrap = document.createElement('span');
+                var pct = Math.round((sf - i) * 100);
+                var wrap = document.createElement('span');
                 wrap.style.cssText = 'position:relative;display:inline-block;width:1em;height:1em;line-height:1;vertical-align:text-bottom;';
-                const emptyStar = document.createElement('span');
+                var emptyStar = document.createElement('span');
                 emptyStar.style.color = '#475569';
                 emptyStar.textContent = '\u2605';
-                const filledStar = document.createElement('span');
+                var filledStar = document.createElement('span');
                 filledStar.style.cssText = 'position:absolute;left:0;top:0;overflow:hidden;width:' + pct + '%;color:#facc15;';
                 filledStar.textContent = '\u2605';
                 wrap.appendChild(emptyStar);
                 wrap.appendChild(filledStar);
                 starsEl.appendChild(wrap);
             } else {
-                const s = document.createElement('span');
-                s.className = 'star text-sm empty';
-                s.textContent = '\u2605';
-                starsEl.appendChild(s);
+                var s2 = document.createElement('span');
+                s2.className = 'star text-sm empty';
+                s2.textContent = '\u2605';
+                starsEl.appendChild(s2);
             }
         }
 
-        const img = document.getElementById('modalImage');
+        var img = document.getElementById('modalImage');
         if (data.image) {
             img.src = data.image;
             img.style.display = 'block';
@@ -191,7 +181,7 @@
         }
 
         document.getElementById('modalDescription').innerHTML = data.description || '';
-        const commentEl = document.getElementById('modalComment');
+        var commentEl = document.getElementById('modalComment');
         if (data.comment) {
             commentEl.innerHTML = data.comment;
             commentEl.style.display = 'block';
@@ -209,46 +199,100 @@
         document.body.style.overflow = '';
     }
 
-    function switchTab(tab) {
-        document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tab).classList.add('active');
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.querySelector('.tab-btn[data-tab="' + tab + '"]').classList.add('active');
+    // ── Category dropdown ──
+    function toggleCatDropdown() {
+        document.getElementById('cat-dropdown').classList.toggle('hidden');
     }
 
-    function toggleSort(cat, sort) {
-        if (!sortState[cat]) sortState[cat] = {field: 'date', asc: false};
-        const st = sortState[cat];
-        if (st.field !== sort) {
-            st.field = sort;
-            st.asc = false;
+    function selectCategory(cat) {
+        currentCat = cat;
+        document.getElementById('cat-dropdown').classList.add('hidden');
+        document.getElementById('current-cat-label').textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+
+        // Update dropdown highlights
+        document.querySelectorAll('#cat-dropdown button').forEach(function(b) {
+            b.classList.remove('text-blue-400', 'font-semibold', 'bg-slate-700/50');
+            b.classList.add('text-slate-300');
+        });
+        var activeBtn = document.querySelector('#cat-dropdown button[onclick*=\"' + cat + '\"]');
+        if (activeBtn) { activeBtn.classList.add('text-blue-400', 'font-semibold', 'bg-slate-700/50'); activeBtn.classList.remove('text-slate-300'); }
+
+        // Show/hide panels
+        document.querySelectorAll('.cat-panel').forEach(function(p) { p.classList.add('hidden'); });
+        var panel = document.getElementById('cat-' + cat);
+        if (panel) panel.classList.remove('hidden');
+
+        applyFilters();
+    }
+
+    // ── Sort (unified with notes — toggleable asc/desc) ──
+    function toggleSort(sort) {
+        var btn = document.querySelector('.sort-btn[data-sort=\"' + sort + '\"]');
+
+        if (currentSort === sort) {
+            sortAsc = !sortAsc;
         } else {
-            st.asc = !st.asc;
+            currentSort = sort;
+            sortAsc = false;
         }
-        // Update sort buttons in this tab
-        const panel = document.getElementById('tab-' + cat);
-        panel.querySelectorAll('.sort-btn').forEach(el => {
-            el.classList.remove('active');
-            el.querySelector('.arrow').textContent = '▼';
-        });
-        const btn = panel.querySelector('.sort-btn[data-sort="' + sort + '"]');
+
+        document.querySelectorAll('.sort-btn').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
-        btn.querySelector('.arrow').textContent = st.asc ? '▲' : '▼';
-        applySort(cat);
+
+        document.querySelectorAll('.sort-btn .arrow').forEach(function(a) { a.textContent = '\u25BC'; });
+        btn.querySelector('.arrow').textContent = sortAsc ? '\u25B2' : '\u25BC';
+
+        applyFilters();
     }
 
-    function applySort(cat) {
-        const panel = document.getElementById('tab-' + cat);
-        const grid = panel.querySelector('.grid');
+    function applyFilters() {
+        var panel = document.getElementById('cat-' + currentCat);
+        if (!panel) return;
+        var grid = panel.querySelector('.grid');
         if (!grid) return;
-        const cards = Array.from(grid.querySelectorAll('.review-card'));
-        const st = sortState[cat] || {field: 'date', asc: false};
-        cards.sort((a, b) => {
-            const va = parseFloat(a.getAttribute('data-' + st.field));
-            const vb = parseFloat(b.getAttribute('data-' + st.field));
-            return st.asc ? va - vb : vb - va;
-        });
-        cards.forEach(c => grid.appendChild(c));
+        var cards = Array.from(grid.querySelectorAll('.review-card'));
+
+        // Sort
+        var mult = sortAsc ? 1 : -1;
+        if (currentSort === 'date') {
+            cards.sort(function(a, b) { return mult * (parseFloat(b.getAttribute('data-date')) - parseFloat(a.getAttribute('data-date'))); });
+        } else {
+            cards.sort(function(a, b) { return mult * (parseFloat(b.getAttribute('data-' + currentSort)) - parseFloat(a.getAttribute('data-' + currentSort))); });
+        }
+        cards.forEach(function(c) { grid.appendChild(c); });
     }
+
+    // ── Search ──
+    var searchTimer;
+    document.getElementById('review-search').addEventListener('input', function() {
+        clearTimeout(searchTimer);
+        var self = this;
+        searchTimer = setTimeout(function() {
+            var q = self.value.trim().toLowerCase();
+            document.querySelectorAll('.review-card').forEach(function(card) {
+                var title = (card.querySelector('h4')?.textContent || '').toLowerCase();
+                var creator = (card.querySelector('.text-slate-400')?.textContent || '').toLowerCase();
+                card.style.display = (!q || title.includes(q) || creator.includes(q)) ? '' : 'none';
+            });
+        }, 200);
+    });
+
+    // ── Click outside dropdown ──
+    document.addEventListener('click', function(e) {
+        var dd = document.getElementById('cat-dropdown');
+        var btn = document.getElementById('cat-dropdown-btn');
+        if (!dd || dd.classList.contains('hidden')) return;
+        if (!e.target.closest('#cat-dropdown') && !e.target.closest('#cat-dropdown-btn')) {
+            dd.classList.add('hidden');
+        }
+    });
+
+    // Expose to onclick handlers
+    window.toggleCatDropdown = toggleCatDropdown;
+    window.selectCategory = selectCategory;
+    window.toggleSort = toggleSort;
+    window.showModal = showModal;
+    window.closeModal = closeModal;
+})();
 </script>
 {% endblock %}

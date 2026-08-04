@@ -1,0 +1,74 @@
+/* Server Dashboard — global styles */
+
+body {
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.nav-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.nav-link-mobile {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+/* Active nav state — managed by JS, one source of truth */
+.nav-active, .nav-link.nav-active, .nav-link-mobile.nav-active {
+    background: #334155 !important;
+    color: #fff !important;
+}
+
+@media (max-width: 767px) {
+    .nav-links-mobile {
+        position: fixed;
+        top: 56px;
+        right: 8px;
+        width: 200px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 4px;
+        z-index: 100;
+        box-shadow: 0 10px 25px rgba(0,0,0,.5);
+    }
+}
+
+.prose h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+.prose h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+.prose p  { margin-bottom: 0.75rem; line-height: 1.7; }
+.prose ul { list-style: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+.prose img { max-width: 100%; height: auto; border-radius: 8px; }
+
+.modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Unified sort buttons — transparent border style, blue active */
+.sort-btn {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    border: 1px solid #334155;
+    background: transparent;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.sort-btn:hover { border-color: #475569; color: #cbd5e1; }
+.sort-btn.active { border-color: #2563eb; color: #60a5fa; }
+.sort-btn .arrow { margin-left: 2px; font-size: 0.65rem; }

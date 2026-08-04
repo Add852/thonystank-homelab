@@ -3,40 +3,213 @@
 {% block title %}Notes{% endblock %}
 
 {% block content %}
-<div class="flex items-center gap-2 mb-5">
-    <i class="fas fa-feather-alt text-blue-400 text-xl"></i>
-    <h2 class="text-xl sm:text-3xl font-bold text-slate-100">Notes</h2>
-</div>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+    <div class="flex items-center gap-2">
+        <i class="fas fa-feather-alt text-blue-400 text-xl"></i>
+        <h2 class="text-xl sm:text-3xl font-bold text-slate-100">Notes</h2>
+    </div>
 
-<!-- Tags -->
-{% if tags %}
-<div class="flex flex-wrap gap-2 mb-6">
-    <a href="/notes" class="px-3 py-1.5 min-h-[36px] text-sm rounded-md transition-colors {% if not tag_param %}bg-blue-600 text-white{% else %}bg-slate-700 text-slate-300 hover:bg-slate-600{% endif %}">All</a>
-    {% for tag in tags %}
-    <a href="/notes?tag={{ tag }}" class="px-3 py-1.5 min-h-[36px] text-sm rounded-md transition-colors {% if tag_param == tag %}bg-blue-600 text-white{% else %}bg-slate-700 text-slate-300 hover:bg-slate-600{% endif %}">{{ tag }}</a>
-    {% endfor %}
-</div>
-{% endif %}
-
-<!-- Notes grid -->
-<div class="grid gap-4 grid-cols-1 sm:grid-cols-2">
-    {% for note in notes %}
-    <a href="/note/{{ note.url_slug }}" class="block bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 hover:border-slate-500 transition-colors">
-        <h3 class="font-semibold text-base sm:text-lg text-slate-100 mb-1.5">{{ note.display_title }}</h3>
-        {% if note.preview_body %}
-        <p class="text-sm sm:text-base text-slate-400 line-clamp-2 leading-relaxed">{{ note.preview_body }}</p>
+    <!-- Search bar -->
+    <div class="relative w-full sm:w-64">
+        <input type="text" id="note-search" placeholder="Search titles..." value="{{ search_param }}"
+               class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 pl-9 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none transition-colors"
+               autocomplete="off">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+        {% if search_param %}
+        <button onclick="clearSearch()" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-sm">&times;</button>
         {% endif %}
-        {% if note.all_tags %}
-        <div class="flex flex-wrap gap-1.5 mt-3">
-            {% for tag in note.all_tags %}
-            <span class="text-xs px-2 py-0.5 bg-slate-700 text-slate-400 rounded">{{ tag }}</span>
+    </div>
+</div>
+
+<!-- Filter bar: tag dropdown + sort toggle -->
+<div class="flex flex-wrap items-center gap-3 mb-5">
+
+    <!-- Tag filter dropdown -->
+    {% if tags %}
+    <div class="relative group">
+        <button id="tag-dropdown-btn" onclick="toggleTagDropdown()"
+                class="flex items-center gap-2 px-3 py-2 text-sm bg-slate-800 border border-slate-600 rounded-lg text-slate-300 hover:border-slate-500 transition-colors">
+            <i class="fas fa-tag text-blue-400 text-xs"></i>
+            <span id="current-tag-label">{% if tag_param %}{{ tag_param }}{% else %}All tags{% endif %}</span>
+            <i class="fas fa-chevron-down text-slate-500 text-[10px]"></i>
+        </button>
+        <div id="tag-dropdown" class="hidden absolute z-30 mt-1 w-56 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+            <button onclick="selectTag('')" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-700 transition-colors {% if not tag_param %}text-blue-400 font-semibold bg-slate-700/50{% else %}text-slate-300{% endif %}">
+                All
+                <span class="text-xs text-slate-500 ml-1">({{ notes_count_all }})</span>
+            </button>
+            {% for tag in tags %}
+            <button onclick="selectTag('{{ tag }}')" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-700 transition-colors flex items-center justify-between {% if tag_param == tag %}text-blue-400 font-semibold bg-slate-700/50{% else %}text-slate-300{% endif %}">
+                <span>{{ tag }}</span>
+                <span class="text-xs text-slate-500">{{ tag_counts.get(tag, 0) }}</span>
+            </button>
             {% endfor %}
         </div>
-        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Sort toggle (unified with reviews style + icons + asc/desc) -->
+    <div class="flex gap-2 ml-auto">
+        <button onclick="toggleSort('date')" class="sort-btn active" data-sort="date">
+            <i class="fas fa-clock"></i>Date <span class="arrow">▼</span>
+        </button>
+        <button onclick="toggleSort('title')" class="sort-btn" data-sort="title">
+            <i class="fas fa-sort-alpha-down"></i>Title <span class="arrow">▼</span>
+        </button>
+    </div>
+</div>
+
+<!-- Notes grid -->
+<div class="grid gap-4 grid-cols-1 sm:grid-cols-2" id="notes-grid">
+    {% for note in notes %}
+    <a href="/note/{{ note.url_slug }}" class="note-card bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 hover:border-slate-500 transition-colors flex flex-col"
+       data-date="{{ note.created_ts }}" data-title="{{ note.title | lower }}">
+        <div class="flex-1">
+            <h3 class="font-semibold text-base sm:text-lg text-slate-100 mb-1.5">{{ note.display_title }}</h3>
+            {% if note.preview_body %}
+            <p class="text-sm text-slate-400 line-clamp-2 leading-relaxed">{{ note.preview_body }}</p>
+            {% endif %}
+        </div>
+        <div class="flex items-end justify-between mt-3 gap-3">
+            <div class="flex flex-wrap gap-1.5">
+                {% for tag in note.tags %}
+                {% if tag.lower() not in ('public', 'private') %}
+                <span class="text-xs px-2 py-0.5 bg-slate-700 text-slate-400 rounded">{{ tag }}</span>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% if note.created %}
+            <span class="text-xs text-slate-600 shrink-0">{{ note.created }}</span>
+            {% endif %}
+        </div>
     </a>
     {% endfor %}
 </div>
+
 {% if not notes %}
-<p class="text-sm text-slate-500 text-center py-8">No notes found{% if tag_param %} with tag "{{ tag_param }}"{% endif %}.</p>
+<p class="text-sm text-slate-500 text-center py-8">
+    No notes found{% if tag_param %} with tag "{{ tag_param }}"{% endif %}{% if search_param %} matching "{{ search_param }}"{% endif %}.
+</p>
 {% endif %}
+
+<script>
+// Sort state with asc/desc toggle
+var currentSort = '{{ sort_param }}';
+var sortAsc = false;  // default descending
+var currentTag = '{{ tag_param or "" }}';
+var currentSearch = '{{ search_param or "" }}';
+
+// Tag dropdown
+function toggleTagDropdown() {
+    var dd = document.getElementById('tag-dropdown');
+    dd.classList.toggle('hidden');
+}
+
+document.addEventListener('click', function(e) {
+    var dd = document.getElementById('tag-dropdown');
+    var btn = document.getElementById('tag-dropdown-btn');
+    if (!dd || dd.classList.contains('hidden')) return;
+    if (!e.target.closest('#tag-dropdown') && !e.target.closest('#tag-dropdown-btn')) {
+        dd.classList.add('hidden');
+    }
+});
+
+function selectTag(tag) {
+    currentTag = tag;
+    document.getElementById('tag-dropdown').classList.add('hidden');
+    document.getElementById('current-tag-label').textContent = tag || 'All';
+    applyFilters();
+}
+
+// Sort — toggleable asc/desc like reviews
+function toggleSort(sort) {
+    var btn = document.querySelector('.sort-btn[data-sort=\"' + sort + '\"]');
+
+    if (currentSort === sort) {
+        sortAsc = !sortAsc;
+    } else {
+        // Switching sort field: keep descending
+        currentSort = sort;
+        sortAsc = false;
+    }
+
+    // Update button states
+    document.querySelectorAll('.sort-btn').forEach(function(b) {
+        b.classList.remove('active');
+    });
+    btn.classList.add('active');
+
+    // Update arrow
+    document.querySelectorAll('.sort-btn .arrow').forEach(function(a) {
+        a.textContent = '▼';
+    });
+    btn.querySelector('.arrow').textContent = sortAsc ? '▲' : '▼';
+
+    applyFilters();
+}
+
+// Search
+var searchTimer;
+document.getElementById('note-search').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    var self = this;
+    searchTimer = setTimeout(function() {
+        currentSearch = self.value.trim();
+        applyFilters();
+    }, 250);
+});
+
+function clearSearch() {
+    document.getElementById('note-search').value = '';
+    currentSearch = '';
+    applyFilters();
+}
+
+function buildUrl() {
+    var params = [];
+    if (currentTag) params.push('tag=' + encodeURIComponent(currentTag));
+    params.push('sort=' + currentSort);
+    if (currentSearch) params.push('search=' + encodeURIComponent(currentSearch));
+    var qs = params.join('&');
+    return '/notes' + (qs ? '?' + qs : '');
+}
+
+function applyFilters() {
+    var cards = document.querySelectorAll('#notes-grid .note-card');
+    cards.forEach(function(card) {
+        var title = card.getAttribute('data-title') || '';
+        var tags = card.textContent.toLowerCase();
+        var visible = true;
+        if (currentTag && !tags.includes(currentTag.toLowerCase())) visible = false;
+        if (currentSearch && !title.includes(currentSearch.toLowerCase())) visible = false;
+        card.style.display = visible ? '' : 'none';
+    });
+    sortCards();
+    updateUrl();
+}
+
+function sortCards() {
+    var grid = document.getElementById('notes-grid');
+    var cards = Array.from(grid.querySelectorAll('.note-card'));
+    var mult = sortAsc ? 1 : -1;
+    if (currentSort === 'date') {
+        cards.sort(function(a, b) { return mult * (parseInt(b.getAttribute('data-date')) - parseInt(a.getAttribute('data-date'))); });
+    } else {
+        cards.sort(function(a, b) { return mult * a.getAttribute('data-title').localeCompare(b.getAttribute('data-title')); });
+    }
+    cards.forEach(function(card) { grid.appendChild(card); });
+}
+
+function updateUrl() {
+    var url = buildUrl();
+    if (window.location.search !== url.split('?')[1]) {
+        history.replaceState({}, '', url);
+    }
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', function() {
+    sortCards();
+});
+</script>
 {% endblock %}

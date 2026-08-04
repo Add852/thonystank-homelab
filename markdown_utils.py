@@ -41,11 +41,12 @@ def parse_created_ts(value) -> int:
 
 
 def format_created(date_str: str) -> str:
+    """Format ISO date to 'Month DD, YYYY, HH:MM AM/PM' with no timezone suffix."""
     if not date_str:
         return ""
     try:
         dt = datetime.datetime.fromisoformat(str(date_str))
-        return dt.strftime("%B %d, %Y, %I:%M %p %z")
+        return dt.strftime("%B %d, %Y, %I:%M %p")
     except Exception:
         return str(date_str)
 

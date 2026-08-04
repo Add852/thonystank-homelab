@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+{% block meta_description %}Anthony Dayrit — software developer, homelab operator, tinkerer.{% endblock %}
+{% block og_title %}Anthony Dayrit — Portfolio{% endblock %}
+{% block og_description %}Software developer, homelab operator, tinkerer.{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/css/about.css?v=2">
+{% endblock %}
+
+{% block content %}
+
+<!-- Profile Header — skeleton layout, JS fills content -->
+<div class="mb-8 bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+        <div id="profile-avatar-container">
+            <div class="w-20 h-20 rounded-full ring-2 ring-slate-600 shrink-0 bg-slate-700 animate-pulse"></div>
+        </div>
+        <div class="text-center sm:text-left min-w-0">
+            <h1 class="text-2xl font-bold text-slate-100"><span id="profile-name">Loading...</span></h1>
+            <p id="profile-headline" class="text-sm mt-0.5 h-4 w-48 bg-slate-700 rounded animate-pulse inline-block"></p>
+            <p id="profile-bio" class="text-slate-500 text-sm mt-1 h-3 w-64 bg-slate-700 rounded animate-pulse inline-block"></p>
+            <div class="flex flex-wrap gap-3 mt-3 justify-center sm:justify-start" id="profile-meta"></div>
+        </div>
+    </div>
+</div>
+
+<!-- GitHub Contributions — hidden until loaded -->
+<div id="contrib-section" class="mb-10" style="display:none">
+    <h2 class="text-lg font-semibold text-slate-200 mb-3">
+        <i class="fab fa-github mr-2 text-slate-400"></i><span id="contrib-count">0</span> contributions in the last year
+    </h2>
+    <div class="bg-slate-800/40 rounded-xl border border-slate-700/50 p-4 sm:p-5 overflow-x-auto">
+        <div class="contrib-graph" id="contrib-graph"></div>
+        <div class="flex items-center justify-end gap-2 mt-3 text-xs text-slate-500">
+            <span>Less</span>
+            <span class="contrib-legend contrib-level-0"></span>
+            <span class="contrib-legend contrib-level-1"></span>
+            <span class="contrib-legend contrib-level-2"></span>
+            <span class="contrib-legend contrib-level-3"></span>
+            <span class="contrib-legend contrib-level-4"></span>
+            <span>More</span>
+        </div>
+    </div>
+</div>
+
+<!-- Dynamic sections -->
+<div id="linkedin-experience"></div>
+<div id="linkedin-education"></div>
+<div id="linkedin-skills"></div>
+<div id="linkedin-certs"></div>
+<div id="github-projects"></div>
+
+<!-- Social Links -->
+<div class="bg-slate-800/30 rounded-xl border border-slate-700/50 p-5">
+    <h3 class="text-base font-semibold text-slate-300 mb-3">Links</h3>
+    <div class="flex flex-wrap gap-3" id="social-link-list">
+        <a href="https://github.com/Add852" target="_blank"
+           class="text-sm text-slate-400 hover:text-white transition px-3 py-1.5 bg-slate-700/50 rounded-lg border border-slate-600/50">
+            <i class="fab fa-github mr-1.5"></i>GitHub
+        </a>
+    </div>
+</div>
+
+<script>
+(function() {
+    var LOADED = false;
+
+    function el(tag, attrs, inner) {
+        var e = document.createElement(tag);
+        if (attrs) for (var k in attrs) { if (k === 'className') e.className = attrs[k]; else e.setAttribute(k, attrs[k]); }
+        if (inner) e.innerHTML = inner;
+        return e;
+    }
+
+    function loadData() {
+        if (LOADED) return;
+        LOADED = true;
+
+        Promise.all([
+            fetch('/api/github').then(function(r) { return r.json(); }),
+            fetch('/api/linkedin').then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var github = results[0];
+            var linkedin = results[1];
+            var profile = github.profile;
+
+            // Profile — swap skeleton content in-place
+            var avatarContainer = document.getElementById('profile-avatar-container');
+            if (avatarContainer) {
+                if (profile.avatar_url) {
+                    avatarContainer.innerHTML = '<img src="' + profile.avatar_url + '" alt="' + (profile.login||'') + '" class="w-20 h-20 rounded-full ring-2 ring-slate-600 shrink-0">';
+                } else {
+                    avatarContainer.innerHTML = '';
+                }
+            }
+
+            var nameEl = document.getElementById('profile-name');
+            if (nameEl) nameEl.textContent = linkedin.name || profile.name || profile.login || 'Anthony Dayrit';
+
+            var headlineEl = document.getElementById('profile-headline');
+            if (headlineEl) {
+                if (linkedin.headline) {
+                    headlineEl.textContent = linkedin.headline;
+                    headlineEl.className = 'text-blue-400 text-sm mt-0.5';
+                } else {
+                    headlineEl.style.display = 'none';
+                }
+            }
+
+            var bioEl = document.getElementById('profile-bio');
+            if (bioEl) {
+                if (profile.bio) {
+                    bioEl.textContent = profile.bio;
+                    bioEl.className = 'text-slate-400 text-sm mt-1';
+                } else {
+                    bioEl.style.display = 'none';
+                }
+            }
+
+            var metaEl = document.getElementById('profile-meta');
+            if (metaEl) {
+                metaEl.innerHTML = '';
+                if (profile.location) metaEl.appendChild(el('span', {className:'text-xs text-slate-500'}, '<i class="fas fa-map-marker-alt mr-1"></i>' + profile.location));
+                if (profile.followers) metaEl.appendChild(el('span', {className:'text-xs text-slate-500'}, profile.followers + ' followers'));
+                if (profile.login) metaEl.appendChild(el('a', {className:'text-xs text-blue-400 hover:text-blue-300 transition', href:'https://github.com/'+profile.login, target:'_blank'}, '<i class="fab fa-github mr-1"></i>@'+profile.login));
+            }
+
+            // Contributions
+            var contribs = github.contributions;
+            if (contribs && contribs.weeks) {
+                var cs = document.getElementById('contrib-section');
+                if (cs) cs.style.display = 'block';
+                var cc = document.getElementById('contrib-count');
+                if (cc) cc.textContent = contribs.total || 0;
+                var cg = document.getElementById('contrib-graph');
+                if (cg) {
+                    cg.innerHTML = '';
+                    contribs.weeks.forEach(function(week) {
+                        (week.days || []).forEach(function(day) {
+                            var level = Math.min(day.count || 0, 4);
+                            var cell = el('div', {className:'contrib-cell contrib-level-' + level});
+                            cell.dataset.count = day.count || 0;
+                            cell.dataset.date = day.date || '';
+                            cell.title = (day.count || 0) + ' contribution' + (day.count !== 1 ? 's' : '') + ' on ' + (day.date||'');
+                            cg.appendChild(cell);
+                        });
+                    });
+                }
+            }
+
+            // LinkedIn sections
+            ['experience', 'education', 'skills', 'certifications'].forEach(function(s) {
+                var data = linkedin[s];
+                var div = document.getElementById('linkedin-' + s);
+                if (!div || !data || !data.length) return;
+
+                var titles = {experience:'Experience', education:'Education', skills:'Skills', certifications:'Licenses &amp; Certifications'};
+                var icons = {experience:'fa-briefcase text-blue-400', education:'fa-graduation-cap text-blue-400', skills:'fa-code text-purple-400', certifications:'fa-certificate text-yellow-400'};
+
+                if (s === 'experience') {
+                    div.innerHTML = '<h2 class="text-lg font-semibold text-slate-200 mb-4"><i class="fas ' + icons[s] + ' mr-2"></i>' + titles[s] + '</h2><div class="space-y-3"></div>';
+                    var list = div.lastElementChild;
+                    data.forEach(function(pos) {
+                        list.innerHTML += '<div class="bg-slate-800/40 border border-slate-700/50 rounded-lg p-4"><h3 class="font-semibold text-slate-200">' + (pos.title||'') + '</h3><p class="text-sm text-slate-400">' + (pos.company||'') + ' · ' + (pos.dates||'') + '</p>' + (pos.description ? '<p class="text-sm text-slate-500 mt-1">' + pos.description + '</p>' : '') + '</div>';
+                    });
+                } else if (s === 'education') {
+                    div.innerHTML = '<h2 class="text-lg font-semibold text-slate-200 mb-4"><i class="fas ' + icons[s] + ' mr-2"></i>' + titles[s] + '</h2><div class="space-y-3"></div>';
+                    var list = div.lastElementChild;
+                    data.forEach(function(e) {
+                        list.innerHTML += '<div class="bg-slate-800/40 border border-slate-700/50 rounded-lg p-4"><h3 class="font-semibold text-slate-200">' + (e.school||'') + '</h3><p class="text-sm text-slate-400">' + (e.degree||'') + ' · ' + (e.field||'') + '</p><p class="text-xs text-slate-500">' + (e.dates||'') + '</p></div>';
+                    });
+                } else if (s === 'skills') {
+                    div.innerHTML = '<h2 class="text-lg font-semibold text-slate-200 mb-4"><i class="fas ' + icons[s] + ' mr-2"></i>' + titles[s] + '</h2><div class="flex flex-wrap gap-2"></div>';
+                    var wrap = div.lastElementChild;
+                    data.forEach(function(sk) { wrap.appendChild(el('span', {className:'px-3 py-1.5 text-sm bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-300'}, sk)); });
+                } else if (s === 'certifications') {
+                    div.innerHTML = '<h2 class="text-lg font-semibold text-slate-200 mb-4"><i class="fas ' + icons[s] + ' mr-2"></i>' + titles[s] + '</h2><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>';
+                    var grid = div.lastElementChild;
+                    data.forEach(function(c) {
+                        grid.innerHTML += '<div class="bg-slate-800/40 border border-slate-700/50 rounded-lg p-4 flex items-start gap-3"><i class="fas fa-award text-yellow-800 text-lg mt-0.5 shrink-0"></i><div><h3 class="font-semibold text-slate-200 text-sm">' + (c.name||'') + '</h3><p class="text-xs text-slate-400">' + (c.issuer||'') + (c.date ? ' · ' + c.date : '') + '</p></div></div>';
+                    });
+                }
+            });
+
+            // GitHub repos
+            var repos = github.repos || [];
+            var langColors = {html:'#e34c26',javascript:'#f1e05a',typescript:'#3178c6',python:'#3572a5',css:'#563d7c',shell:'#89e051',go:'#00add8',rust:'#dea584',markdown:'#083fa1',dockerfile:'#384d54',yaml:'#cb171e',svelte:'#ff3e00',vue:'#41b883',ruby:'#701516',c:'#555555','c++':'#f34b97','c#':'#178600',java:'#b07215',swift:'#ffac45',kotlin:'#a97bff',scala:'#c22d40',nix:'#aeb9e1',php:'#4F5D95'};
+            var proj = document.getElementById('github-projects');
+            if (proj) {
+                proj.innerHTML = '<h2 class="text-lg font-semibold text-slate-200 mb-4"><i class="fas fa-code mr-2 text-green-800"></i>Projects (' + repos.length + ' repos)</h2><div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="repo-grid"></div>';
+                var repoGrid = document.getElementById('repo-grid');
+                repos.forEach(function(repo) {
+                    var langColor = langColors[(repo.language||'').toLowerCase()] || '#94a3b8';
+                    repoGrid.innerHTML +=
+                        '<div class="project-card bg-slate-800/30 rounded-xl border border-slate-700/50 p-4 hover:border-green-500/40 hover:bg-slate-800/50 transition-all group">' +
+                        '<div class="flex items-center gap-2.5 mb-2">' +
+                        '<i class="fas fa-' + (repo.fork ? 'code-branch' : 'folder') + ' text-sm ' + (repo.fork ? 'text-slate-600' : 'text-blue-400') + '"></i>' +
+                        '<a href="' + (repo.url||'#') + '" target="_blank" class="font-semibold text-slate-200 hover:text-green-400 transition truncate">' + (repo.name||'') + '</a>' +
+                        (repo.stars > 0 ? '<span class="ml-auto text-xs text-slate-400 shrink-0"><i class="far fa-star text-yellow-400 mr-0.5"></i>' + repo.stars + '</span>' : '') +
+                        (repo.fork ? '<span class="text-[10px] text-slate-500 bg-slate-700/60 px-1.5 py-0.5 rounded shrink-0">forked</span>' : '') +
+                        (repo.homepage ? '<a href="' + repo.homepage + '" target="_blank" class="homepage-badge text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-full hover:bg-emerald-400/20 transition shrink-0"><i class="fas fa-globe mr-1 text-[10px]"></i>live</a>' : '') +
+                        '</div>' +
+                        (repo.description ? '<p class="text-sm text-slate-400 mb-3 leading-relaxed line-clamp-2">' + repo.description + '</p>' : '') +
+                        '<div class="flex items-center gap-4 text-xs">' +
+                        (repo.language ? '<span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:' + langColor + '"></span>' + repo.language + '</span>' : '') +
+                        '<span class="text-slate-600">' + (repo.updated_at||'') + '</span>' +
+                        '</div>' +
+                        '</div>';
+                });
+            }
+
+            // LinkedIn link
+            if (linkedin.profile_url) {
+                var social = document.getElementById('social-link-list');
+                if (social) social.innerHTML += '<a href="' + linkedin.profile_url + '" target="_blank" class="text-sm text-slate-400 hover:text-white transition px-3 py-1.5 bg-slate-700/50 rounded-lg border border-slate-600/50"><i class="fab fa-linkedin mr-1.5"></i>LinkedIn</a>';
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadData);
+    } else {
+        loadData();
+    }
+})();
+</script>
+{% endblock %}

@@ -6,10 +6,12 @@
         </a>
 
         <!-- Desktop links -->
-        <div class="hidden md:flex items-center gap-1">
-            <a href="/" class="nav-link rounded-md text-sm font-medium {% if request.url.path == '/' %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700/50{% endif %} transition-colors"><i class="fas fa-server mr-1.5 text-xs"></i>Dashboard</a>
-            <a href="/notes" class="nav-link rounded-md text-sm font-medium {% if request.url.path.startswith('/note') or request.url.path == '/notes' %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700/50{% endif %} transition-colors"><i class="fas fa-feather-alt mr-1.5 text-xs"></i>Notes</a>
-            <a href="/reviews" class="nav-link rounded-md text-sm font-medium {% if request.url.path.startswith('/reviews') %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700/50{% endif %} transition-colors"><i class="fas fa-star mr-1.5 text-xs"></i>Reviews</a>
+        <div class="hidden md:flex items-center gap-1" id="desktop-nav">
+            <a href="/" class="nav-link rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors" data-nav="home"><i class="fas fa-home mr-1.5 text-xs"></i>Home</a>
+            <a href="/dashboard" class="nav-link rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors" data-nav="dashboard"><i class="fas fa-server mr-1.5 text-xs"></i>Dashboard</a>
+            <a href="/notes" class="nav-link rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors" data-nav="notes"><i class="fas fa-feather-alt mr-1.5 text-xs"></i>Notes</a>
+            <a href="/reviews" class="nav-link rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors" data-nav="reviews"><i class="fas fa-star mr-1.5 text-xs"></i>Reviews</a>
+            <a href="/about" class="nav-link rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors" data-nav="about"><i class="fas fa-user mr-1.5 text-xs"></i>About</a>
         </div>
 
         <!-- Hamburger (mobile) -->
@@ -19,10 +21,12 @@
         </button>
     </div>
 
-    <!-- Mobile dropdown (floating overlay) -->
+    <!-- Mobile dropdown -->
     <div id="mobileMenu" class="md:hidden hidden nav-links-mobile">
-        <a href="/" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium {% if request.url.path == '/' %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700{% endif %} transition-colors"><i class="fas fa-server mr-2 w-4 text-center"></i>Dashboard</a>
-        <a href="/notes" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium {% if request.url.path.startswith('/note') or request.url.path == '/notes' %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700{% endif %} transition-colors"><i class="fas fa-feather-alt mr-2 w-4 text-center"></i>Notes</a>
-        <a href="/reviews" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium {% if request.url.path.startswith('/reviews') %}bg-slate-700 text-white{% else %}text-slate-300 hover:text-white hover:bg-slate-700{% endif %} transition-colors"><i class="fas fa-star mr-2 w-4 text-center"></i>Reviews</a>
+        <a href="/" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" data-nav="home"><i class="fas fa-home mr-2 w-4 text-center"></i>Home</a>
+        <a href="/dashboard" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" data-nav="dashboard"><i class="fas fa-server mr-2 w-4 text-center"></i>Dashboard</a>
+        <a href="/notes" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" data-nav="notes"><i class="fas fa-feather-alt mr-2 w-4 text-center"></i>Notes</a>
+        <a href="/reviews" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" data-nav="reviews"><i class="fas fa-star mr-2 w-4 text-center"></i>Reviews</a>
+        <a href="/about" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" data-nav="about"><i class="fas fa-user mr-2 w-4 text-center"></i>About</a>
     </div>
 </nav>

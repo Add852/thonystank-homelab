@@ -1,4 +1,4 @@
-# Server Dashboard
+# Thonystank Homelab
 
 Personal homelab dashboard and content site. Serves service status cards, public notes, and reviews from an Obsidian markdown vault.
 
@@ -9,7 +9,7 @@ Personal homelab dashboard and content site. Serves service status cards, public
 ## Project Structure
 
 ```
-server_dashboard/
+thonystank-homelab/
 ├── main.py                  # FastAPI app, routes, startup
 ├── models.py                # Dataclasses: Note, Review
 ├── monitoring_service.py    # Service status from config.yaml
@@ -19,17 +19,20 @@ server_dashboard/
 ├── requirements.txt         # Python dependencies
 ├── static/
 │   ├── favicon.svg
-│   └── css/output.css       # Tailwind build (optional)
+│   └── css/
+│       ├── output.css       # Tailwind build (optional)
+│       ├── global.css       # Nav, prose, modal-close
+│       └── reviews.css      # Reviews tabs, modal, star ratings
 ├── templates/
 │   ├── base.html            # Shell: meta, nav, scripts
 │   ├── index.html           # Service dashboard grid
 │   ├── notes.html           # Public notes listing with tag filter
 │   ├── note.html            # Individual note with wikilinks
 │   ├── reviews.html         # Tabbed reviews grid with modal
-│   ├── terminal.html        # iframe to ttyd terminal (port 7681)
 │   └── partials/
 │       ├── nav.html         # Sticky nav bar, mobile hamburger
-│       └── scripts.html     # Mobile menu JS
+│       ├── scripts.html     # Mobile menu JS
+│       └── macros.html      # Shared Jinja macros (star ratings, etc.)
 └── tests/
     └── test_routes.py       # pytest integration tests
 
@@ -71,7 +74,7 @@ No code changes needed — the monitoring service reads the config and picks it 
 ## Running
 
 ```bash
-cd server_dashboard
+cd thonystank-homelab
 source venv/bin/activate
 python3 main.py
 # → http://localhost:8080
@@ -86,7 +89,7 @@ uvicorn main:app --host 0.0.0.0 --port 8080
 ## Testing
 
 ```bash
-cd server_dashboard
+cd thonystank-homelab
 source venv/bin/activate
 pip install pytest
 python -m pytest tests/
@@ -96,6 +99,5 @@ Tests use `FastAPI.testclient` with a temp Obsidian vault fixture — no real va
 
 ## Notes
 
-- `terminal.html` is a standalone page embedding a ttyd terminal on port 7681. Not linked from the nav bar.
 - Service icons use a two-tier system: `icon_url` for official SVG/PNG logos, falling back to Font Awesome `fa-*` classes. Services without official icons (Mnemosyne, 9Router) use Font Awesome exclusively.
-- The project home is `/home/tony/server_dashboard`. The vault lives at `/home/tony/SyncProxmox/ObsidianVaults/GroundZero`.
+- The project home is `/home/tony/thonystank-homelab`. The vault lives at `/home/tony/SyncProxmox/ObsidianVaults/GroundZero`.

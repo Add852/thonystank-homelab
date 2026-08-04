@@ -1,0 +1,11 @@
+# LinkedIn Profile — fill in your actual details
+# Used when linkedin.mode is "yaml" in config.yaml
+name: "Anthony Dayrit"
+headline: ""
+summary: ""
+positions: []
+education: []
+skills: []
+links:
+  github: "https://github.com/Add852"
+  linkedin: "https://www.linkedin.com/in/anthony-dayrit-785284371"
