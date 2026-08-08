@@ -130,7 +130,7 @@ async def dashboard(request: Request):
 
 
 @app.get("/notes", response_class=HTMLResponse)
-async def notes(request: Request, tag: str = None, sort: str = "date", search: str = None):
+async def notes(request: Request, tag: str = None, sort: str = "date", sort_dir: str = "desc", search: str = None):
     notes_list, tags = get_public_notes(CONFIG["vault_root"], CONFIG["notes_dir"])
 
     # Count tag usage from the full unfiltered list (single pass)
@@ -156,6 +156,7 @@ async def notes(request: Request, tag: str = None, sort: str = "date", search: s
         "tags": sorted_tags,
         "tag_param": tag,
         "sort_param": sort,
+        "sort_dir_param": sort_dir,
         "search_param": search or "",
         "tag_counts": tag_counts,
         "notes_count_all": total_count,
@@ -177,9 +178,13 @@ async def note_view(request: Request, slug: str):
 
 
 @app.get("/reviews", response_class=HTMLResponse)
-async def reviews(request: Request):
+async def reviews(request: Request, sort: str = "date", sort_dir: str = "desc", cat: str = "movies", search: str = None):
     return templates.TemplateResponse(request, "reviews.html", {
         "reviews": get_reviews(CONFIG["vault_root"], CONFIG["contents_dir"]),
+        "sort_param": sort,
+        "sort_dir_param": sort_dir,
+        "cat_param": cat,
+        "search_param": search or "",
     })
 
 

@@ -93,9 +93,9 @@
 {% endif %}
 
 <script>
-// Sort state with asc/desc toggle
+// Sort state with asc/desc toggle — defaults come from server (URL params)
 var currentSort = '{{ sort_param }}';
-var sortAsc = false;  // default descending
+var sortAsc = {{ (sort_dir_param == "asc") | tojson }};
 var currentTag = '{{ tag_param or "" }}';
 var currentSearch = '{{ search_param or "" }}';
 
@@ -121,16 +121,16 @@ function selectTag(tag) {
     applyFilters();
 }
 
-// Sort — toggleable asc/desc like reviews
+// Sort — toggleable asc/desc
 function toggleSort(sort) {
     var btn = document.querySelector('.sort-btn[data-sort=\"' + sort + '\"]');
 
     if (currentSort === sort) {
         sortAsc = !sortAsc;
     } else {
-        // Switching sort field: keep descending
+        // Defaults: date=desc (newest), title=asc (a-z), rating=desc (highest)
         currentSort = sort;
-        sortAsc = false;
+        sortAsc = (sort === 'title');
     }
 
     // Update button states
@@ -169,6 +169,7 @@ function buildUrl() {
     var params = [];
     if (currentTag) params.push('tag=' + encodeURIComponent(currentTag));
     params.push('sort=' + currentSort);
+    params.push('sort_dir=' + (sortAsc ? 'asc' : 'desc'));
     if (currentSearch) params.push('search=' + encodeURIComponent(currentSearch));
     var qs = params.join('&');
     return '/notes' + (qs ? '?' + qs : '');
@@ -207,9 +208,24 @@ function updateUrl() {
     }
 }
 
-// Init
-document.addEventListener('DOMContentLoaded', function() {
+// Init: sync button states + arrows + search from URL params
+function initSortUI() {
+    // Restore search input value
+    var searchInput = document.getElementById('note-search');
+    if (searchInput && currentSearch) searchInput.value = currentSearch;
+
+    document.querySelectorAll('.sort-btn').forEach(function(b) {
+        b.classList.remove('active');
+        b.querySelector('.arrow').textContent = '▼';
+    });
+    var activeBtn = document.querySelector('.sort-btn[data-sort="' + currentSort + '"]');
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.querySelector('.arrow').textContent = sortAsc ? '▲' : '▼';
+    }
     sortCards();
-});
+}
+
+document.addEventListener('DOMContentLoaded', initSortUI);
 </script>
 {% endblock %}

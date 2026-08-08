@@ -128,11 +128,11 @@
 
 <script>
 (function() {
-    // Per-category sort state
-    var sortState = {};
-    var currentCat = 'movies';
-    var currentSort = 'date';
-    var sortAsc = false;
+    // Sort state — defaults from server (URL params)
+    var currentCat = '{{ cat_param }}';
+    var currentSort = '{{ sort_param }}';
+    var sortAsc = {{ (sort_dir_param == "asc") | tojson }};
+    var currentSearch = '{{ search_param or "" }}';
 
     // ── Modal ──
 
@@ -227,14 +227,15 @@
 
     // ── Sort (unified with notes — toggleable asc/desc) ──
     function toggleSort(sort) {
-        var btn = document.querySelector('.sort-btn[data-sort=\"' + sort + '\"]');
+            var btn = document.querySelector('.sort-btn[data-sort=\"' + sort + '\"]');
 
-        if (currentSort === sort) {
-            sortAsc = !sortAsc;
-        } else {
-            currentSort = sort;
-            sortAsc = false;
-        }
+            if (currentSort === sort) {
+                sortAsc = !sortAsc;
+            } else {
+                // Defaults: date=desc (newest), rating=desc (highest)
+                currentSort = sort;
+                sortAsc = false;
+            }
 
         document.querySelectorAll('.sort-btn').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
@@ -260,6 +261,8 @@
             cards.sort(function(a, b) { return mult * (parseFloat(b.getAttribute('data-' + currentSort)) - parseFloat(a.getAttribute('data-' + currentSort))); });
         }
         cards.forEach(function(c) { grid.appendChild(c); });
+
+        updateUrl();
     }
 
     // ── Search ──
@@ -268,14 +271,65 @@
         clearTimeout(searchTimer);
         var self = this;
         searchTimer = setTimeout(function() {
-            var q = self.value.trim().toLowerCase();
+            currentSearch = self.value.trim();
+            var q = currentSearch.toLowerCase();
             document.querySelectorAll('.review-card').forEach(function(card) {
                 var title = (card.querySelector('h4')?.textContent || '').toLowerCase();
                 var creator = (card.querySelector('.text-slate-400')?.textContent || '').toLowerCase();
                 card.style.display = (!q || title.includes(q) || creator.includes(q)) ? '' : 'none';
             });
+            updateUrl();
         }, 200);
     });
+
+    // ── URL persistence ──
+    function buildUrl() {
+        var params = ['sort=' + currentSort, 'sort_dir=' + (sortAsc ? 'asc' : 'desc')];
+        params.push('cat=' + currentCat);
+        if (currentSearch) params.push('search=' + encodeURIComponent(currentSearch));
+        return '/reviews?' + params.join('&');
+    }
+
+    function updateUrl() {
+        history.replaceState({}, '', buildUrl());
+    }
+
+    // ── Init: sync UI state from URL params on load ──
+    function initUI() {
+        // Restore search input value
+        var searchInput = document.getElementById('review-search');
+        if (searchInput && currentSearch) searchInput.value = currentSearch;
+
+        // Set category dropdown label + highlight
+        var label = document.getElementById('current-cat-label');
+        if (label) label.textContent = currentCat.charAt(0).toUpperCase() + currentCat.slice(1);
+        document.querySelectorAll('#cat-dropdown button').forEach(function(b) {
+            b.classList.remove('text-blue-400', 'font-semibold', 'bg-slate-700/50');
+            b.classList.add('text-slate-300');
+        });
+        var catBtn = document.querySelector('#cat-dropdown button[onclick*="' + currentCat + '"]');
+        if (catBtn) { catBtn.classList.add('text-blue-400', 'font-semibold', 'bg-slate-700/50'); catBtn.classList.remove('text-slate-300'); }
+
+        // Show correct panel
+        document.querySelectorAll('.cat-panel').forEach(function(p) { p.classList.add('hidden'); });
+        var panel = document.getElementById('cat-' + currentCat);
+        if (panel) panel.classList.remove('hidden');
+
+        // Set sort button states
+        document.querySelectorAll('.sort-btn').forEach(function(b) {
+            b.classList.remove('active');
+            b.querySelector('.arrow').textContent = '\u25BC';
+        });
+        var sortBtn = document.querySelector('.sort-btn[data-sort="' + currentSort + '"]');
+        if (sortBtn) {
+            sortBtn.classList.add('active');
+            sortBtn.querySelector('.arrow').textContent = sortAsc ? '\u25B2' : '\u25BC';
+        }
+
+        applyFilters();
+    }
+
+    document.addEventListener('DOMContentLoaded', initUI);
 
     // ── Click outside dropdown ──
     document.addEventListener('click', function(e) {
