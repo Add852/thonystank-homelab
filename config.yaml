@@ -33,13 +33,13 @@ services:
     tailscale_only: true
     description: Homelab hypervisor — hosts Ubuntu Server VM, Tailscale VPN, and all services on an old laptop
     icon_url: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/proxmox.svg
-  9Router:
+  OmniRoute:
     port: 20128
     url: http://192.168.1.17:20128
     proxied: false
     tailscale_only: true
-    description: AI provider router — single endpoint for all LLM providers, key management, and usage analytics
-    icon: fa-random
+    description: AI model routing proxy — OmniRoute provider dispatch, key management, and usage analytics
+    icon: fa-route
   Syncthing:
     port: 8384
     url: http://192.168.1.17:8384

@@ -8,7 +8,7 @@ SERVICE_ICONS = {
     "mnemosyne": "fa-brain",
     "proxmox": "fa-server",
     "syncthing": "fa-sync",
-    "9router": "fa-route",
+    "omniroute": "fa-route",
     "openai-oauth": "fa-lock",
     "headroom": "fa-shield-halved",
     "dashboard": "fa-gauge-high",

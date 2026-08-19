@@ -99,5 +99,5 @@ Tests use `FastAPI.testclient` with a temp Obsidian vault fixture — no real va
 
 ## Notes
 
-- Service icons use a two-tier system: `icon_url` for official SVG/PNG logos, falling back to Font Awesome `fa-*` classes. Services without official icons (Mnemosyne, 9Router) use Font Awesome exclusively.
-- The project home is `/home/tony/thonystank-homelab`. The vault lives at `/home/tony/SyncProxmox/ObsidianVaults/GroundZero`.
+- Service icons use a two-tier system: `icon_url` for official SVG/PNG logos, falling back to Font Awesome `fa-*` classes. Services without official icons (Mnemosyne, OmniRoute) use Font Awesome exclusively.
+- The project home is `/home/tony/Projects/thonystank-homelab`. The vault lives at `/home/tony/SyncProxmox/ObsidianVaults/GroundZero`.
