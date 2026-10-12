@@ -1,11 +1,13 @@
 // Thony Stank Homelab — Service Worker
-// Strategy: cache-first for static assets, network-first for pages, offline fallback
-const CACHE_NAME = 'thony-stank-v5';
+// Network-first for everything (deploys appear immediately), cache as offline
+// fallback so the PWA still works when the network is down.
+const CACHE_NAME = 'thony-stank-v6';
 const STATIC_ASSETS = [
   '/',
   '/about',
   '/notes',
-  '/static/css/global.css',
+  '/static/css/global.css?v=5',
+  '/static/css/fontawesome/all.min.css',
   '/static/js/tailwind.js',
   '/static/manifest.json',
   '/static/favicon.svg',
@@ -36,63 +38,36 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: network-first with cache fallback for navigation, cache-first for static
+// Fetch: network-first with cache fallback (all requests, any origin path)
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-
-  // Don't intercept non-GET requests or browser extensions
   if (event.request.method !== 'GET') return;
 
-  // Skip non-GET requests or browser extensions
-  if (event.request.method !== 'GET') return;
-
-  // Navigation requests: network-first with offline fallback
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache a clone of the response
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // Cache successful same-origin pages + static so offline still works
+        const url = new URL(event.request.url);
+        if (response.ok && (url.pathname.startsWith('/static/') || event.request.mode === 'navigate')) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request).then((cached) => {
-            if (cached) return cached;
-            // Ultimate fallback — return a cached page or simple offline message
-            return caches.match('/') || new Response(
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            return caches.match('/').then((home) => home || new Response(
               '<html><head><meta charset="UTF-8"><title>Offline - Thony Stank</title>' +
-              '<style>body{font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;' +
+              '<style>body{font-family:monospace;display:flex;align-items:center;justify-content:center;' +
               'height:100vh;margin:0;background:#0f172a;color:#e2e8f0;text-align:center}' +
               'h1{font-size:2rem;margin-bottom:0.5rem}</style></head>' +
-              '<body><div><h1>📡 Offline</h1><p>No connection. Check back soon.</p></div></body></html>',
+              '<body><div><h1>\u{1F4E1} Offline</h1><p>No connection. Check back soon.</p></div></body></html>',
               { headers: { 'Content-Type': 'text/html' } }
-            );
-          });
-        })
-    );
-    return;
-  }
-
-  // Static assets: cache-first
-  if (url.pathname.startsWith('/static/')) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(event.request).then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          return response;
+            ));
+          }
+          return Response.error();
         });
       })
-    );
-    return;
-  }
-
-  // Everything else: network-first, no caching
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
   );
 });
