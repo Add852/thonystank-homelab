@@ -1,17 +1,16 @@
 // Thony Stank Homelab — Service Worker
 // Strategy: cache-first for static assets, network-first for pages, offline fallback
-const CACHE_NAME = 'thony-stank-v3';
+const CACHE_NAME = 'thony-stank-v4';
 const STATIC_ASSETS = [
   '/',
   '/about',
   '/notes',
   '/static/css/global.css',
+  '/static/js/tailwind.js',
   '/static/manifest.json',
   '/static/favicon.svg',
   '/static/icons/pwa/icon-192.png',
-  '/static/icons/pwa/icon-512.png',
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+  '/static/icons/pwa/icon-512.png'
 ];
 
 // Install: pre-cache core static assets
@@ -44,11 +43,8 @@ self.addEventListener('fetch', (event) => {
   // Don't intercept non-GET requests or browser extensions
   if (event.request.method !== 'GET') return;
 
-  // Skip external CDN script fetches that have their own caching
-  if (url.hostname === 'cdn.tailwindcss.com') {
-    event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
-    return;
-  }
+  // Skip non-GET requests or browser extensions
+  if (event.request.method !== 'GET') return;
 
   // Navigation requests: network-first with offline fallback
   if (event.request.mode === 'navigate') {

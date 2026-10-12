@@ -139,13 +139,20 @@
         return out;
     }
 
-    (async function run() {
+    async function start() {
         var c1 = window.ff.cmdLine(body, TERM.user, TERM.host);
         await window.ff.typeText(c1.txt, 'cowsay "' + TERM.cow_message + '"', TERM.type_duration_ms);
         c1.cur.remove();
         body.appendChild(window.ff.el('pre', 'term-out', cowsay(TERM.cow_message)));
         window.ff.cmdLine(body, TERM.user, TERM.host); // fresh prompt, blinking cursor
-    })();
+    }
+
+    // Wait for scripts.html (window.ff) on first load; it already ran on SPA re-nav
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { start().catch(function() {}); });
+    } else {
+        start().catch(function() {});
+    }
 })();
 </script>
 

@@ -112,11 +112,11 @@
             wrap.innerHTML = '<p class="text-xs text-slate-500 p-3">Preview unavailable — use Open PDF.</p>';
         };
         var script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.src = '/static/js/pdfjs/pdf.min.js';
         script.onerror = fallback;
         script.onload = function() {
             try {
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/js/pdfjs/pdf.worker.min.js';
                 fetch(resumeUrl).then(function(r) { return r.arrayBuffer(); }).then(function(buf) {
                     return pdfjsLib.getDocument({data: buf}).promise;
                 }).then(function(pdf) {

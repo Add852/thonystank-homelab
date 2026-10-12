@@ -18,14 +18,19 @@ thonystank-homelab/
 ├── github_service.py        # GitHub profile/repos/contributions (cached)
 ├── skeletons.py             # Static skeleton HTML fragments per page
 ├── config.yaml              # Site, profile, services, terminal config
+├── config.py                # Config loader: .env + ${VAR} expansion
 ├── requirements.txt         # Python dependencies
 ├── static/
 │   ├── favicon.svg
 │   ├── manifest.json        # PWA manifest
 │   ├── sw.js                # Service worker
+│   ├── fonts/               # Self-hosted NerdFont (terminal glyphs)
+│   ├── webfonts/            # Self-hosted Font Awesome webfonts
+│   ├── js/                  # Self-hosted Tailwind + pdf.js (no external CDNs)
 │   ├── icons/pwa/           # PWA icons
 │   └── css/
-│       ├── global.css       # Nav, prose, modal-close
+│       ├── global.css       # Terminal theme, buttons, fastfetch panel
+│       ├── fontawesome/     # Self-hosted Font Awesome CSS
 │       ├── index.css        # Dashboard cards
 │       ├── about.css        # About page, contribution graph
 │       └── reviews.css      # Reviews tabs, modal, star ratings
