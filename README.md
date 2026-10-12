@@ -105,6 +105,17 @@ Or:
 uvicorn main:app --host 0.0.0.0 --port 8080
 ```
 
+## Deploying
+
+```bash
+git pull                      # on the server
+cp .env.example .env          # once — then set the device's absolute paths
+pip install -r requirements.txt  # into the venv
+sudo systemctl restart <service> # or however uvicorn runs
+```
+
+The service worker is network-first, so new deploys show up on the next page load — no cache bumping needed. `static/` (Tailwind, Font Awesome, NerdFont, pdf.js) is fully self-hosted; the app needs no internet access.
+
 ## Testing
 
 ```bash
