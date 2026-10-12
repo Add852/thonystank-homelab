@@ -9,19 +9,6 @@
 .status-dot.offline { background: #ef4444; box-shadow: 0 0 6px #ef444488; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 
-.btn-open {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-weight: 500; padding: 8px 14px; min-height: 40px;
-    border-radius: 8px; background: #334155; color: #e2e8f0;
-    transition: background .15s; white-space: nowrap;
-}
-.btn-open:hover { background: #2563eb; color: #fff; }
-
-.btn-vpn {
-    color: #94a3b8;
-    padding: 8px 0; min-height: 40px; display: inline-flex; align-items: center;
-}
-
 .service-icon-img {
     width: 24px; height: 24px; object-fit: contain; flex-shrink: 0;
 }

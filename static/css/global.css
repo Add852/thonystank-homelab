@@ -1,9 +1,95 @@
-/* Server Dashboard — global styles */
+/* Server Dashboard — global styles (terminal theme) */
+
+/* ponytail: full-monospace base for the terminal aesthetic —
+   swap prose back to a sans stack if notes get hard to read. */
+@font-face {
+    font-family: 'JetBrainsMono NF';
+    src: url('/static/fonts/JetBrainsMonoNF-Regular.ttf') format('truetype');
+    font-display: swap;
+}
+html {
+    font-family: ui-monospace, 'JetBrains Mono', 'Fira Code', 'Cascadia Code', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+}
 
 body {
+    background: #0a0e14;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
 }
+
+::selection { background: rgba(74, 222, 128, 0.25); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0a0e14; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+/* ── Terminal window component ── */
+.term {
+    background: rgba(2, 6, 12, 0.85);
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+.term-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: #111827;
+    border-bottom: 1px solid #1e293b;
+    font-size: 12px;
+    color: #64748b;
+}
+.term-dot { width: 11px; height: 11px; border-radius: 9999px; }
+.term-dot.red { background: #ff5f57; }
+.term-dot.yellow { background: #febc2e; }
+.term-dot.green { background: #28c840; }
+.term-title { margin: 0 auto; transform: translateX(-24px); }
+.term-body {
+    padding: 14px 18px;
+    font-family: 'JetBrainsMono NF', ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #cbd5e1;
+    overflow-x: auto;
+    min-height: 12rem;
+}
+.term-cmd { margin: 2px 0; }
+.term-prompt-ic { color: #4ade80; }
+.term-prompt-user { color: #60a5fa; }
+.term-prompt-at { color: #64748b; }
+.term-prompt-host { color: #4ade80; }
+.term-prompt-path { color: #94a3b8; }
+.term-arrow { color: #4ade80; }
+.term-out { color: #94a3b8; margin: 6px 0 10px; overflow-x: auto; }
+.term-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: #4ade80;
+    vertical-align: -2px;
+    animation: term-blink 1s steps(1) infinite;
+}
+@keyframes term-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .term-cursor { animation: none; } }
+
+/* ── fastfetch-style panel ── */
+/* Single row: logo + info never wrap; the text overflows the terminal and scrolls. */
+.ff-panel { display: flex; gap: 18px; margin-top: 6px; flex-wrap: nowrap; width: max-content; font-family: 'JetBrainsMono NF', ui-monospace, monospace; }
+.ff-logo-wrap { flex: 0 0 auto; }
+.ff-logo { width: 96px; height: 96px; border-radius: 10px; border: 1px solid #334155; }
+.ff-info { min-width: 0; }
+.ff-title { color: #4ade80; font-weight: 600; }
+.ff-sep { color: #334155; margin: 2px 0 8px; }
+.ff-row { display: flex; gap: 10px; }
+.ff-key { color: #4ade80; flex: 0 0 96px; }
+.ff-val { color: #e2e8f0; min-width: 0; white-space: nowrap; }
+.ff-link { color: #60a5fa; text-decoration: none; }
+.ff-link:hover { text-decoration: underline; }
+.ff-ext { color: #64748b; font-size: 10px; margin-left: 5px; }
+.ff-link:hover .ff-ext { color: #4ade80; }
+.ff-loading { color: #64748b; }
 
 .nav-link {
     min-height: 44px;
@@ -72,3 +158,17 @@ body {
 .sort-btn:hover { border-color: #475569; color: #cbd5e1; }
 .sort-btn.active { border-color: #2563eb; color: #60a5fa; }
 .sort-btn .arrow { margin-left: 2px; font-size: 0.65rem; }
+
+/* Action buttons — shared across pages (home cards + about resume) */
+.btn-open {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-weight: 500; padding: 8px 14px; min-height: 40px;
+    border-radius: 8px; background: #334155; color: #e2e8f0;
+    transition: background .15s; white-space: nowrap;
+}
+.btn-open:hover { background: #2563eb; color: #fff; }
+
+.btn-vpn {
+    color: #94a3b8;
+    padding: 8px 0; min-height: 40px; display: inline-flex; align-items: center;
+}

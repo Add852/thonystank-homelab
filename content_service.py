@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Dict, Any, Optional
 
 from models import Note, Review
@@ -23,23 +24,23 @@ def _get_cached(path: str, parser_fn):
     return data
 
 
-def get_public_notes(vault_root: str, notes_dir: str) -> tuple[list[Note], list[str]]:
-    notes_dir_path = os.path.join(vault_root, notes_dir)
+def get_public_notes(notes_dir: str, public_tag: str = "public") -> tuple[list[Note], list[str]]:
+    notes_dir = notes_dir or ""
     notes: list[Note] = []
     tags: set[str] = set()
 
-    if not os.path.isdir(notes_dir_path):
+    if not os.path.isdir(notes_dir):
         return notes, []
 
-    for fn in sorted(os.listdir(notes_dir_path)):
+    for fn in sorted(os.listdir(notes_dir)):
         if not fn.endswith(".md"):
             continue
-        path = os.path.join(notes_dir_path, fn)
+        path = os.path.join(notes_dir, fn)
         note = _get_cached(path, lambda p: _parse_note(p))
         if not note:
             continue
-        # Only include public-tagged notes in listing
-        if "public" not in [t.lower() for t in note.all_tags]:
+        # Only include notes with the configured public tag in the listing
+        if public_tag.lower() not in [t.lower() for t in note.all_tags]:
             continue
         notes.append(note)
         tags.update(note.tags)
@@ -75,15 +76,15 @@ def _parse_note(path: str) -> Optional[Note]:
     )
 
 
-def get_note_by_slug(vault_root: str, notes_dir: str, slug: str) -> Optional[Note]:
-    notes_dir_path = os.path.join(vault_root, notes_dir)
-    if not os.path.isdir(notes_dir_path):
+def get_note_by_slug(notes_dir: str, slug: str) -> Optional[Note]:
+    notes_dir = notes_dir or ""
+    if not os.path.isdir(notes_dir):
         return None
-    for fn in os.listdir(notes_dir_path):
+    for fn in os.listdir(notes_dir):
         if not fn.endswith(".md"):
             continue
         if slug_from_filename(fn) == slug:
-            path = os.path.join(notes_dir_path, fn)
+            path = os.path.join(notes_dir, fn)
             return _get_cached(path, lambda p: _parse_note(p))
     return None
 
@@ -135,8 +136,8 @@ def _parse_review(path: str, category: str) -> Optional[Review]:
     )
 
 
-def get_reviews(vault_root: str, contents_dir: str) -> dict[str, list[Review]]:
-    base = os.path.join(vault_root, contents_dir)
+def get_reviews(contents_dir: str) -> dict[str, list[Review]]:
+    base = contents_dir or ""
     categories = {
         "movies": os.path.join(base, "movies"),
         "series": os.path.join(base, "series"),
@@ -156,3 +157,28 @@ def get_reviews(vault_root: str, contents_dir: str) -> dict[str, list[Review]]:
         items.sort(key=lambda r: r.created_ts, reverse=True)
         result[cat] = items
     return result
+
+_EMBED_RE = re.compile(r"!\[\[([^\]]+)\]\]")
+
+def get_embedded_attachments(notes_dir: str,
+                             viewable_tags: tuple = ("public", "private")) -> set[str]:
+    """Filenames referenced via ![[...]] embeds in viewable notes.
+
+    Used to gate /static/attachments/ so arbitrary vault files aren't served.
+    ponytail: reviews aren't scanned; add them if reviews ever embed vault attachments.
+    """
+    allowed: set[str] = set()
+    notes_dir = notes_dir or ""
+    if not os.path.isdir(notes_dir):
+        return allowed
+    viewable = {t.lower() for t in viewable_tags}
+    for fn in os.listdir(notes_dir):
+        if not fn.endswith(".md"):
+            continue
+        note = _get_cached(os.path.join(notes_dir, fn), _parse_note)
+        if not note or not any(t.lower() in viewable for t in note.all_tags):
+            continue
+        for m in _EMBED_RE.finditer(note.content):
+            target = m.group(1).split("|", 1)[0].strip()
+            allowed.add(os.path.basename(target))
+    return allowed

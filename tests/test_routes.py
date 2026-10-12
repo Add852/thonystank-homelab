@@ -53,7 +53,11 @@ This is a dummy review.
 """
     (contents_dir / "books" / "book_review_sample.md").write_text(review, encoding="utf-8")
 
-    yield {"VAULT_ROOT": str(base)}
+    yield {
+        "NOTES_DIR": str(notes_dir),
+        "CONTENTS_DIR": str(contents_dir),
+        "FILES_DIR": str(base / "4 Files"),
+    }
 
     shutil.rmtree(str(base))
 
@@ -66,10 +70,24 @@ def client(temp_vault, monkeypatch):
 
     cfg_path = Path(tempfile.mkdtemp()) / "config.yaml"
     cfg = {
-        "vault_root": temp_vault["VAULT_ROOT"],
-        "notes_dir": "1 Everything/0 Notes",
-        "contents_dir": "1 Everything/2 Contents",
+        "site": {"name": "Test Homelab"},
+        "markdown": {
+            "notes_dir": temp_vault["NOTES_DIR"],
+            "contents_dir": temp_vault["CONTENTS_DIR"],
+            "attachments_dir": temp_vault["FILES_DIR"],
+            "public_tag": "public",
+            "private_tag": "private",
+        },
         "services": {},
+        "profile": {
+            "github": {"username": "tony", "hide_repos": []},
+            "email": "tony@example.com",
+            "linkedin": "https://linkedin.com/in/tony",
+            "messenger": "https://m.me/tony",
+            "phone": "+63 900 000 0000",
+        },
+        "terminal": {"user": "tony", "host": "linux", "cow_message": "howdy",
+                     "shell": "fish", "type_duration_ms": 1500},
     }
     cfg_path.write_text(yaml.dump(cfg), encoding="utf-8")
 
@@ -86,6 +104,10 @@ def client(temp_vault, monkeypatch):
     import content_service as cs
     cs._CONTENT_CACHE.clear()
 
+    import monitoring_service as ms
+    ms._status_cache["data"] = None
+    ms._status_cache["ts"] = 0.0
+
     import importlib
     import main as main_mod
     importlib.reload(main_mod)
@@ -99,7 +121,20 @@ def client(temp_vault, monkeypatch):
 def test_root_returns_200(client):
     resp = client.get("/")
     assert resp.status_code == 200
-    assert "Dashboard" in resp.text
+    assert "Services" in resp.text and "Explore" in resp.text
+    assert "Test Homelab" in resp.text               # site name from config
+    assert "tony@linux — fish" in resp.text          # terminal identity from config
+    assert "\\uf31a" in resp.text                   # Tux OS icon (JS escape in source)
+    assert '"cow_message": "howdy"' in resp.text    # cowsay text from config
+    assert '"type_duration_ms": 1500' in resp.text  # typing duration from config
+
+def test_dashboard_route_removed(client):
+    assert client.get("/dashboard").status_code == 404
+
+def test_resume_missing_returns_404(client):
+    """Temp config has no resume_path → /resume 404s and about hides the section."""
+    assert client.get("/resume").status_code == 404
+    assert "<iframe" not in client.get("/about").text
 
 
 def test_notes_page_lists_public_notes(client):
@@ -128,3 +163,55 @@ def test_reviews_page_returns_200(client):
     assert resp.status_code == 200
     html = resp.text
     assert "Book Review Sample" in html
+
+def test_debug_attachments_route_removed(client):
+    assert client.get("/debug/attachments").status_code == 404
+
+def test_linkedin_api_removed(client):
+    assert client.get("/api/linkedin").status_code == 404
+
+def test_about_page_renders(client):
+    resp = client.get("/about")
+    assert resp.status_code == 200
+    assert 'id="ff-panel-body"' in resp.text          # fastfetch profile panel container
+    assert "tony@linux" in resp.text                  # panel title from terminal config
+    assert "More active on GitHub" not in resp.text   # note bubble removed
+    assert "tony@example.com" in resp.text            # email from contact config
+
+def test_hide_repos_normalization():
+    from github_service import _normalize_repo_filters, _repo_hidden
+    assert _normalize_repo_filters(["https://github.com/Add852/thonystank-homelab", "Other-Repo/"]) == {"thonystank-homelab", "other-repo"}
+    assert _repo_hidden("thonystank-homelab", {"thonystank-homelab"})
+    assert _repo_hidden("someuser/thonystank-homelab", {"thonystank-homelab"})
+    assert not _repo_hidden("other-name", {"thonystank-homelab"})
+
+def test_attachments_gated_by_embeds(client, temp_vault):
+    """Only files embedded (![[...]]) in public/private notes may be served."""
+    files_dir = Path(temp_vault["FILES_DIR"])
+    files_dir.mkdir(parents=True, exist_ok=True)
+    (files_dir / "secret.txt").write_text("private stuff", encoding="utf-8")
+    (files_dir / "public-pic.png").write_text("fake png", encoding="utf-8")
+    (files_dir / "private-pic.png").write_text("fake png", encoding="utf-8")
+
+    # Exists on disk but not embedded anywhere → 404
+    assert client.get("/static/attachments/secret.txt").status_code == 404
+
+    notes_dir = Path(temp_vault["NOTES_DIR"])
+    (notes_dir / "with_pic.md").write_text(
+        "---\ntags: [public]\ncreated: 2026-01-01 10:00:00+08:00\n---\n![[public-pic.png]]\n",
+        encoding="utf-8",
+    )
+    (notes_dir / "private_pic.md").write_text(
+        "---\ntags: [private]\ncreated: 2026-01-02 10:00:00+08:00\n---\n![[private-pic.png]]\n",
+        encoding="utf-8",
+    )
+
+    assert client.get("/static/attachments/public-pic.png").status_code == 200
+    assert client.get("/static/attachments/private-pic.png").status_code == 200
+
+def test_service_status_cached(client):
+    """Second call within TTL returns the cached dict (same object)."""
+    import monitoring_service as ms
+    first = ms.get_service_status({"services": {}})
+    second = ms.get_service_status({"services": {"whatever": {"port": 1}}})
+    assert first is second  # TTL cache wins over the new cfg within 30s

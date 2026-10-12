@@ -15,20 +15,20 @@ def _repeat(html: str, count: int) -> str:
 
 # ── About ──
 ABOUT = (
-    # Profile card
-    '<div class="mb-8 bg-slate-800/50 rounded-xl border border-slate-700 p-6 animate-pulse">'
-    '<div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">'
-    '<div id="profile-avatar-container"><div class="w-20 h-20 rounded-full ring-2 ring-slate-600 shrink-0 bg-slate-700"></div></div>'
-    '<div class="text-center sm:text-left min-w-0 w-full">'
-    '<div class="h-7 w-40 bg-slate-700 rounded mb-2"><span id="profile-name"></span></div>'
-    '<div id="profile-headline" class="h-4 w-48 bg-slate-700 rounded mb-1.5"></div>'
-    '<div id="profile-bio" class="h-3 w-64 bg-slate-700 rounded mb-3"></div>'
-    '<div class="flex gap-3">'
-    '<div class="h-3 w-24 bg-slate-700 rounded"></div>'
-    '<div class="h-3 w-20 bg-slate-700 rounded"></div>'
-    '<div class="h-3 w-28 bg-slate-700 rounded"></div>'
-    '</div><div id="profile-meta"></div>'
-    '</div></div></div>'
+    # Profile as fastfetch terminal panel
+    '<div class="term mb-10">'
+    '<div class="term-bar"><span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span><span class="term-title"></span></div>'
+    '<div class="term-body" style="min-height:16rem">'
+    '<div class="ff-panel">'
+    '<div class="ff-logo bg-slate-700 animate-pulse"></div>'
+    '<div class="ff-info">'
+    '<div class="h-5 w-44 bg-slate-700 rounded mb-2 animate-pulse"></div>'
+    '<div class="h-3 w-64 bg-slate-700 rounded mb-2 animate-pulse"></div>'
+    '<div class="h-3 w-52 bg-slate-700 rounded mb-2 animate-pulse"></div>'
+    '<div class="h-3 w-60 bg-slate-700 rounded mb-2 animate-pulse"></div>'
+    '<div class="h-3 w-48 bg-slate-700 rounded mb-2 animate-pulse"></div>'
+    '<div class="h-3 w-56 bg-slate-700 rounded animate-pulse"></div>'
+    '</div></div></div></div>'
 
     # Contributions section
     '<div id="contrib-section" class="mb-10 animate-pulse" style="display:none">'
@@ -45,28 +45,8 @@ ABOUT = (
     '<span>More</span>'
     '</div></div></div>'
 
-    # Experience
-    '<div id="linkedin-experience"></div>'
-
-    # Education
-    '<div id="linkedin-education"></div>'
-
-    # Skills
-    '<div id="linkedin-skills"></div>'
-
-    # Certifications
-    '<div id="linkedin-certs"></div>'
-
     # GitHub repos
     '<div id="github-projects"></div>'
-
-    # Social Links
-    '<div class="bg-slate-800/30 rounded-xl border border-slate-700/50 p-5 mt-8 animate-pulse">'
-    '<div class="h-5 w-12 bg-slate-700 rounded mb-3"></div>'
-    '<div class="flex gap-3" id="social-link-list">'
-    '<div class="w-24 h-8 bg-slate-700 rounded-lg"></div>'
-    '<div class="w-24 h-8 bg-slate-700 rounded-lg"></div>'
-    '</div></div>'
 )
 
 # ── Homepage ──
@@ -92,29 +72,6 @@ HOMEPAGE = (
         '<div class="w-8 h-8 bg-slate-700 rounded mb-3"></div>'
         '<div class="h-5 w-24 bg-slate-700 rounded mb-2"></div>'
         '<div class="h-3 w-full bg-slate-700 rounded"></div></div>', 3) +
-    '</div>'
-)
-
-# ── Dashboard ──
-DASHBOARD = (
-    '<div class="mb-6 animate-pulse">'
-    '<div class="flex items-center gap-3 mb-1">'
-    '<div class="w-6 h-6 bg-slate-700 rounded"></div>'
-    '<div class="h-7 w-48 bg-slate-700 rounded"></div></div>'
-    '<div class="h-4 w-32 bg-slate-700 rounded mt-1"></div></div>'
-
-    '<div class="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8">'
-    + _repeat(
-        '<div class="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 animate-pulse">'
-        '<div class="flex items-center justify-between mb-3">'
-        '<div class="flex items-center gap-2">'
-        '<div class="w-8 h-8 bg-slate-700 rounded"></div>'
-        '<div class="h-5 w-24 bg-slate-700 rounded"></div></div>'
-        '<div class="h-5 w-16 bg-slate-700 rounded-full"></div></div>'
-        '<div class="h-4 w-full bg-slate-700 rounded"></div>'
-        '<div class="mt-4 flex justify-end">'
-        '<div class="w-20 h-8 bg-slate-700 rounded-lg"></div></div></div>',
-        6) +
     '</div>'
 )
 
@@ -192,7 +149,6 @@ REVIEWS = (
 SKELETONS = {
     "": HOMEPAGE,
     "about": ABOUT,
-    "dashboard": DASHBOARD,
     "notes": NOTES,
     "reviews": REVIEWS,
     "note": NOTES,  # single note page shares notes skeleton

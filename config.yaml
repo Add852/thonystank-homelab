@@ -1,94 +1,48 @@
-contents_dir: 1 Everything/2 Contents
-notes_dir: 1 Everything/0 Notes
+site:
+  name: "Thony Stank Homelab"
+
+# ── Device-specific values ──────────────────────────────────────────────
+# These reference .env (gitignored) so this file stays portable across
+# machines. Copy .env.example to .env and adjust per device.
+resume_path: ${RESUME_PATH}
+
+profile:
+  github:
+    username: "Add852"
+    cache_ttl_minutes: 15              # GitHub API cache (60 req/h unauthenticated)
+    hide_repos:                        # repos to exclude from /about (name or full URL)
+      - https://github.com/Add852/thonystank-homelab
+  linkedin: "https://www.linkedin.com/in/anthony-dayrit-785284371"
+  messenger: "https://m.me/xusernametakenx/"
+  phone: "+63 908 485 3181"
+  email: "xadd852x@gmail.com"
+
+markdown:
+  notes_dir: ${NOTES_DIR}              # absolute path to the notes folder
+  contents_dir: ${CONTENTS_DIR}        # absolute path to the reviews folder
+  attachments_dir: ${ATTACHMENTS_DIR}  # absolute path to embedded ![[...]] files
+  public_tag: "public"                 # notes with this tag are listed
+  private_tag: "private"               # also viewable, but not listed
+
 services:
-  Hermes Agent:
-    check: process
-    process_name: hermes dashboard
-    port: 9119
-    url: http://192.168.1.17:9119
-    proxied: false
-    tailscale_only: true
-    description: AI agent platform — personal assistant, dashboard, and messaging gateway
-    icon_url: https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/hermesagent.svg
   Immich:
     port: 2283
     url: http://192.168.1.17:2283
     public_url: https://photos.thonystank.dpdns.org
-    proxied: false
-    tailscale_only: false
-    description: Self-hosted photo and video backup — Google Photos alternative
+    icon: fa-images
     icon_url: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/immich.svg
-  Mnemosyne:
-    port: 8765
-    url: http://192.168.1.17:8765
-    public_url: https://memory.thonystank.dpdns.org
-    proxied: false
-    tailscale_only: false
-    description: AI memory dashboard — visualize and manage Hermes Agent's persistent knowledge
-    icon: fa-brain
+    description: Self-hosted photo and video backup — Google Photos alternative
   Proxmox:
     port: 8006
+    host: 192.168.1.16
     url: https://192.168.1.16:8006
-    proxied: false
-    tailscale_only: true
-    description: Homelab hypervisor — hosts Ubuntu Server VM, Tailscale VPN, and all services on an old laptop
+    icon: fa-server
     icon_url: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/proxmox.svg
-  OmniRoute:
-    port: 20128
-    url: http://192.168.1.17:20128
-    proxied: false
-    tailscale_only: true
-    description: AI model routing proxy — OmniRoute provider dispatch, key management, and usage analytics
-    icon: fa-route
-  Syncthing:
-    port: 8384
-    url: http://192.168.1.17:8384
-    proxied: false
-    tailscale_only: true
-    description: Continuous file sync across laptop, phone, and server
-    icon_url: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/syncthing.svg
-  Job Ops:
-    port: 3005
-    url: http://192.168.1.17:3005
-    proxied: false
-    tailscale_only: true
-    description: "AI job search — search, score, tailor, and track applications across 13+ job boards"
-    icon: fa-briefcase
-  code-server:
-    port: 8443
-    url: http://192.168.1.17:8443
-    proxied: false
-    tailscale_only: true
-    description: VS Code in the browser for remote development — password-protected
-    icon_url: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/code-server.svg
-  Passive Income:
-    port: null
-    url: null
-    check: group
-    group_containers:
-      - passive-income-bitping
-      - passive-income-traffmonetizer
-      - passive-income-repocket
-      - passive-income-packetstream
-      - passive-income-proxyrack
-    container_links:
-      bitping: https://nodes.bitping.com/dashboard
-      traffmonetizer: https://app.traffmonetizer.com/dashboard
-      repocket: https://repocket.com/dashboard/share-internet
-      packetstream: https://app.packetstream.io/dashboard
-      proxyrack: https://peer.proxyrack.com
-    proxied: false
-    tailscale_only: false
-    description: Passive income earning services — Bitping, TraffMonetizer, and more
-    icon: fa-coins
-vault_root: /home/tony/SyncProxmox/ObsidianVaults/GroundZero
+    description: Homelab hypervisor — hosts Ubuntu Server VM, Tailscale VPN, and all services on an old laptop
 
-github:
-  username: "Add852"
-  cache_ttl_minutes: 15
-
-linkedin:
-  mode: "json"
-  profile_url: "https://www.linkedin.com/in/anthony-dayrit-785284371"
-  json_path: "linkedin_profile.json"
-  yaml_path: "linkedin_profile.yaml"
+terminal:
+  user: "tony" # prompt + fastfetch header
+  host: "homelab"
+  cow_message: "Hello, mortals!" # cowsay command + speech bubble on home
+  shell: "fish" # terminal title bar
+  type_duration_ms: 1500 # seconds a typed command takes, regardless of length

@@ -6,6 +6,7 @@ import json
 import asyncio
 import time
 import logging
+import subprocess
 import httpx
 from typing import Optional
 
@@ -13,6 +14,10 @@ logger = logging.getLogger(__name__)
 
 _CACHE: dict = {}  # {key: (timestamp, data)}
 _DEFAULT_TTL = 300  # 5 min fallback
+
+def _github_cfg(cfg: dict) -> dict:
+    """GitHub settings live under profile.github (fallback: legacy github key)."""
+    return (cfg.get("profile") or {}).get("github") or cfg.get("github") or {}
 
 
 def _github_get(path: str, ttl: int = _DEFAULT_TTL, refresh: bool = False) -> Optional[dict]:
@@ -45,19 +50,28 @@ async def _fetch_all_github(cfg: dict, refresh: bool = False):
     profile = loop.run_in_executor(None, get_github_profile, cfg, refresh)
     repos = loop.run_in_executor(None, get_github_repos, cfg, refresh)
     contribs = loop.run_in_executor(None, get_github_contributions, cfg, refresh)
-    return await asyncio.gather(profile, repos, contribs)
+    contributed = loop.run_in_executor(None, get_github_contributed, cfg, refresh)
+    return await asyncio.gather(profile, repos, contribs, contributed)
 
 
 def get_github_profile(cfg: dict, refresh: bool = False) -> Optional[dict]:
-    username = cfg["github"]["username"]
-    ttl = cfg["github"].get("cache_ttl_minutes", 15) * 60
-    return _github_get(f"users/{username}", ttl, refresh)
+    gh = _github_cfg(cfg)
+    ttl = gh.get("cache_ttl_minutes", 15) * 60
+    return _github_get(f"users/{gh.get('username', '')}", ttl, refresh)
 
+
+def _normalize_repo_filters(entries) -> set:
+    """'https://github.com/user/name' or 'name' → {'name'} (lowercased)."""
+    return {str(e).rstrip('/').rsplit('/', 1)[-1].lower() for e in (entries or [])}
+
+def _repo_hidden(name: str, hide: set) -> bool:
+    n = name.lower()
+    return any(n == h or n.endswith('/' + h) for h in hide)
 
 def get_github_repos(cfg: dict, refresh: bool = False) -> list[dict]:
-    username = cfg["github"]["username"]
-    ttl = cfg["github"].get("cache_ttl_minutes", 15) * 60
-    data = _github_get(f"users/{username}/repos?sort=updated&per_page=30", ttl, refresh)
+    gh = _github_cfg(cfg)
+    ttl = gh.get("cache_ttl_minutes", 15) * 60
+    data = _github_get(f"users/{gh.get('username', '')}/repos?sort=updated&per_page=30", ttl, refresh)
     if not data:
         return []
     repos = []
@@ -72,13 +86,63 @@ def get_github_repos(cfg: dict, refresh: bool = False) -> list[dict]:
             "fork": r.get("fork", False),
             "updated_at": (r.get("updated_at") or "")[:10],
         })
-    return repos
+    hide = _normalize_repo_filters(gh.get("hide_repos"))
+    return [r for r in repos if not _repo_hidden(r["name"], hide)]
+
+def get_github_contributed(cfg: dict, refresh: bool = False) -> list[dict]:
+    """Public repos the user contributed to but doesn't own (via gh CLI GraphQL)."""
+    gh = _github_cfg(cfg)
+    username = gh.get("username", "")
+    ttl = gh.get("cache_ttl_minutes", 15) * 60
+    now = time.time()
+    key = f"gh:contributed:{username}"
+    if not refresh and key in _CACHE:
+        ts, data = _CACHE[key]
+        if now - ts < ttl:
+            return data
+
+    query = (
+        'query { user(login:"%s") { repositoriesContributedTo(first: 100, '
+        'includeUserRepositories: false) { nodes { name owner { login } '
+        'description primaryLanguage { name } stargazerCount url updatedAt isFork } } } }'
+        % username
+    )
+    try:
+        result = subprocess.run(
+            ["gh", "api", "graphql", "-f", f"query={query}"],
+            capture_output=True, text=True, timeout=15,
+        )
+        if result.returncode != 0:
+            logger.warning("gh CLI contributed-repos error: %s", result.stderr)
+            return []
+        raw = json.loads(result.stdout)
+        nodes = raw["data"]["user"]["repositoriesContributedTo"]["nodes"]
+        repos = [
+            {
+                "name": f"{n['owner']['login']}/{n['name']}",
+                "description": n.get("description") or "",
+                "language": (n.get("primaryLanguage") or {}).get("name") or "",
+                "stars": n.get("stargazerCount", 0),
+                "url": n.get("url", ""),
+                "homepage": "",
+                "fork": n.get("isFork", False),
+                "updated_at": (n.get("updatedAt") or "")[:10],
+            }
+            for n in nodes
+        ]
+        hide = _normalize_repo_filters(gh.get("hide_repos"))
+        repos = [r for r in repos if not _repo_hidden(r["name"], hide)]
+        repos.sort(key=lambda r: r["updated_at"], reverse=True)
+        _CACHE[key] = (now, repos)
+        return repos
+    except Exception as e:
+        logger.warning("Contributed repos fetch error: %s", e)
+        return []
 
 
 def _get_github_contributions_sync(cfg: dict, ttl: int, refresh: bool = False) -> Optional[dict]:
     """Synchronous contributions fetch via gh CLI."""
-    import subprocess
-    username = cfg["github"]["username"]
+    username = _github_cfg(cfg).get("username", "")
     now = time.time()
     key = f"gh:contributions:{username}"
 
@@ -127,7 +191,7 @@ def _get_github_contributions_sync(cfg: dict, ttl: int, refresh: bool = False) -
 
 
 def get_github_contributions(cfg: dict, refresh: bool = False) -> Optional[dict]:
-    ttl = cfg["github"].get("cache_ttl_minutes", 15) * 60
+    ttl = _github_cfg(cfg).get("cache_ttl_minutes", 15) * 60
     return _get_github_contributions_sync(cfg, ttl, refresh)
 
 
@@ -142,4 +206,5 @@ def warm_github_cache(cfg: dict):
     get_github_profile(cfg)
     get_github_repos(cfg)
     get_github_contributions(cfg)
+    get_github_contributed(cfg)
     logger.info("GitHub cache warm")

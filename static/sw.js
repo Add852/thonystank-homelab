@@ -1,9 +1,8 @@
 // Thony Stank Homelab — Service Worker
 // Strategy: cache-first for static assets, network-first for pages, offline fallback
-const CACHE_NAME = 'thony-stank-v2';
+const CACHE_NAME = 'thony-stank-v3';
 const STATIC_ASSETS = [
   '/',
-  '/dashboard',
   '/about',
   '/notes',
   '/static/css/global.css',

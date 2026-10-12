@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Thony Stank Homelab{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}Thony Stank Homelab — personal dashboard, notes, and reviews by Ant.{% endblock %}">
+    <title>{% block title %}{{ site_name }}{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{{ site_name }} — personal dashboard, notes, and reviews.{% endblock %}">
     <meta name="theme-color" content="#1e293b">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ThonyStank">
     <link rel="manifest" href="/manifest.json">
-    <meta property="og:title" content="{% block og_title %}Thony Stank Homelab{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}Thony Stank Homelab — personal dashboard, notes, and reviews by Ant.{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{{ site_name }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ site_name }} — personal dashboard, notes, and reviews.{% endblock %}">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.url }}">
     <meta property="og:image" content="{% block og_image %}/static/favicon.svg{% endblock %}">

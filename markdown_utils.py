@@ -51,7 +51,7 @@ def format_created(date_str: str) -> str:
         return str(date_str)
 
 
-def render_markdown(text: str, vault_root: str = None, notes_dir: str = None) -> str:
+def render_markdown(text: str) -> str:
     """Render markdown with Obsidian wikilinks [[Note]] and embeds ![[Image]]."""
     if not text:
         return ""

@@ -25,6 +25,96 @@ document.addEventListener('click', function(e) {
     }
 });
 
+/* ── fastfetch panel + terminal helpers (shared: home terminal + about profile) ── */
+window.ff = (function() {
+    function el(tag, cls, text) {
+        var e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text !== undefined) e.textContent = text;
+        return e;
+    }
+    function link(href, text) {
+        var a = el('a', 'ff-link', text);
+        a.href = href;
+        if (href.indexOf('http') === 0 || href.indexOf('mailto:') === 0) a.target = '_blank';
+        a.appendChild(el('span', 'ff-ext', '\uf08e'));  // "opens elsewhere" indicator
+        return a;
+    }
+    function row(key, val) {
+        var r = el('div', 'ff-row');
+        r.appendChild(el('span', 'ff-key', key));
+        var v = el('span', 'ff-val');
+        if (val instanceof Node) v.appendChild(val); else v.textContent = val;
+        r.appendChild(v);
+        return r;
+    }
+    function cmdLine(body, user, host) {
+        var line = el('div', 'term-cmd');
+        line.appendChild(el('span', 'term-prompt-ic', '\uf31a '));
+        line.appendChild(el('span', 'term-prompt-user', user));
+        line.appendChild(el('span', 'term-prompt-at', '@'));
+        line.appendChild(el('span', 'term-prompt-host', host));
+        line.appendChild(el('span', 'term-prompt-ic', ' \uf07b '));
+        line.appendChild(el('span', 'term-prompt-path', '~ '));
+        line.appendChild(el('span', 'term-arrow', '\ue0b0 '));
+        var txt = el('span', 'term-typed');
+        line.appendChild(txt);
+        var cur = el('span', 'term-cursor');
+        line.appendChild(cur);
+        body.appendChild(line);
+        return { txt: txt, cur: cur };
+    }
+    function typeText(span, text, durationMs) {
+        return new Promise(function(resolve) {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                span.textContent = text; resolve(); return;
+            }
+            // Constant total duration regardless of text length
+            var delay = Math.max(8, (durationMs || 2000) / Math.max(text.length, 1));
+            var i = 0;
+            (function tick() {
+                if (i >= text.length) { resolve(); return; }
+                span.textContent += text.charAt(i++);
+                setTimeout(tick, delay);
+            })();
+        });
+    }
+    function build(profile, opts) {
+        opts = opts || {};
+        profile = profile || {};
+        var panel = el('div', 'ff-panel');
+        var logoWrap = el('div', 'ff-logo-wrap');
+        if (profile.avatar_url) {
+            var img = el('img', 'ff-logo');
+            img.src = profile.avatar_url;
+            img.alt = (profile.login || 'avatar') + ' avatar';
+            logoWrap.appendChild(img);
+        } else {
+            logoWrap.appendChild(el('pre', '', '  ___\n [o_o]\n /|_|\\\n  d b'));
+        }
+        panel.appendChild(logoWrap);
+
+        var info = el('div', 'ff-info');
+        info.appendChild(el('div', 'ff-title', (opts.user || 'user') + '@' + (opts.host || 'localhost')));
+        info.appendChild(el('div', 'ff-sep', '-----------------'));
+        if (profile.name) info.appendChild(row('\uf007 Name', profile.name));
+        if (profile.bio) info.appendChild(row('\uf02d Bio', profile.bio));
+        if (profile.location) info.appendChild(row('\uf041 Location', profile.location));
+        if (profile.login) {
+            info.appendChild(row('\uf09b GitHub', link('https://github.com/' + profile.login,
+                '@' + profile.login + ' \u00b7 ' + (profile.followers || 0) + ' followers')));
+        }
+        var c = opts.contact || {};
+        if (c.linkedin) info.appendChild(row('\uf0e1 LinkedIn', link(c.linkedin, c.linkedin.replace(/https?:\/\/(www\.)?/, ''))));
+        if (c.messenger) info.appendChild(row('\uf086 Message', link(c.messenger, 'Messenger')));
+        if (c.phone) info.appendChild(row('\uf095 Phone', link('tel:' + c.phone.replace(/\s/g, ''), c.phone)));
+        if (c.email) info.appendChild(row('\uf0e0 Email', link('mailto:' + c.email, c.email)));
+        panel.appendChild(info);
+        return panel;
+    }
+    return { build: build, cmdLine: cmdLine, typeText: typeText, el: el };
+})();
+
 /* PWA Service Worker */
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -39,7 +129,6 @@ if ('serviceWorker' in navigator) {
 const SKELETON_KEYS = {
     '/': '',
     '/about': 'about',
-    '/dashboard': 'dashboard',
     '/notes': 'notes',
     '/reviews': 'reviews',
     '/note': 'note',
@@ -208,6 +297,7 @@ const SKELETON_KEYS = {
     document.addEventListener('click', function(e) {
         var link = e.target.closest('a');
         if (!link) return;
+        if (link.getAttribute('target') === '_blank') return;  // let the browser open a new tab
         var href = link.getAttribute('href');
         if (!href || !isInternal(href)) return;
         if (e.ctrlKey || e.metaKey || e.shiftKey || e.which === 2) return;

@@ -2,13 +2,12 @@
     <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
         <a href="/" class="flex items-center gap-2 text-slate-100 font-semibold hover:text-white transition-colors nav-link">
             <svg class="w-5 h-5 text-blue-400 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            <span class="text-sm sm:text-base">Thony Stank Homelab</span>
+            <span class="text-sm sm:text-base">{{ site_name }}</span>
         </a>
 
         <!-- Desktop links -->
         <div class="hidden md:flex items-center gap-1" id="desktop-nav">
             <a href="/" class="nav-link rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors" data-nav="home"><i class="fas fa-home mr-1.5 text-xs"></i>Home</a>
-            <a href="/dashboard" class="nav-link rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors" data-nav="dashboard"><i class="fas fa-server mr-1.5 text-xs"></i>Dashboard</a>
             <a href="/notes" class="nav-link rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors" data-nav="notes"><i class="fas fa-feather-alt mr-1.5 text-xs"></i>Notes</a>
             <a href="/reviews" class="nav-link rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors" data-nav="reviews"><i class="fas fa-star mr-1.5 text-xs"></i>Reviews</a>
             <a href="/about" class="nav-link rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors" data-nav="about"><i class="fas fa-user mr-1.5 text-xs"></i>About</a>
@@ -24,7 +23,6 @@
     <!-- Mobile dropdown -->
     <div id="mobileMenu" class="md:hidden hidden nav-links-mobile">
         <a href="/" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" data-nav="home"><i class="fas fa-home mr-2 w-4 text-center"></i>Home</a>
-        <a href="/dashboard" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" data-nav="dashboard"><i class="fas fa-server mr-2 w-4 text-center"></i>Dashboard</a>
         <a href="/notes" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" data-nav="notes"><i class="fas fa-feather-alt mr-2 w-4 text-center"></i>Notes</a>
         <a href="/reviews" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" data-nav="reviews"><i class="fas fa-star mr-2 w-4 text-center"></i>Reviews</a>
         <a href="/about" class="nav-link-mobile px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors" data-nav="about"><i class="fas fa-user mr-2 w-4 text-center"></i>About</a>

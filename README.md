@@ -12,49 +12,62 @@ Personal homelab dashboard and content site. Serves service status cards, public
 thonystank-homelab/
 ├── main.py                  # FastAPI app, routes, startup
 ├── models.py                # Dataclasses: Note, Review
-├── monitoring_service.py    # Service status from config.yaml
+├── monitoring_service.py    # Service status from config.yaml (port checks, 30s cache)
 ├── content_service.py       # Obsidian markdown parsing and caching
 ├── markdown_utils.py        # Frontmatter, wikilinks, markdown→HTML
-├── config.yaml              # Service definitions, vault paths
+├── github_service.py        # GitHub profile/repos/contributions (cached)
+├── skeletons.py             # Static skeleton HTML fragments per page
+├── config.yaml              # Site, profile, services, terminal config
 ├── requirements.txt         # Python dependencies
 ├── static/
 │   ├── favicon.svg
+│   ├── manifest.json        # PWA manifest
+│   ├── sw.js                # Service worker
+│   ├── icons/pwa/           # PWA icons
 │   └── css/
-│       ├── output.css       # Tailwind build (optional)
 │       ├── global.css       # Nav, prose, modal-close
+│       ├── index.css        # Dashboard cards
+│       ├── about.css        # About page, contribution graph
 │       └── reviews.css      # Reviews tabs, modal, star ratings
 ├── templates/
 │   ├── base.html            # Shell: meta, nav, scripts
-│   ├── index.html           # Service dashboard grid
+│   ├── index.html           # Home: hero, services grid, explore cards
+│   ├── about.html           # Portfolio (GitHub, resume, contact links)
 │   ├── notes.html           # Public notes listing with tag filter
 │   ├── note.html            # Individual note with wikilinks
 │   ├── reviews.html         # Tabbed reviews grid with modal
 │   └── partials/
 │       ├── nav.html         # Sticky nav bar, mobile hamburger
-│       ├── scripts.html     # Mobile menu JS
+│       ├── scripts.html     # Mobile menu, PWA, skeleton preloader JS
 │       └── macros.html      # Shared Jinja macros (star ratings, etc.)
 └── tests/
     └── test_routes.py       # pytest integration tests
-
 ```
 
 ## How It Works
 
-- **Services:** `config.yaml` `services:` block defines each card. `monitoring_service.py` reads it and checks port liveness via TCP connect. The template renders each entry as a card.
-- **Notes:** Scans `{vault_root}/{notes_dir}/` for `.md` files tagged `public`. Renders Obsidian wikilinks (`[[Note]]`) and embeds (`![[image]]`) to HTML.
-- **Reviews:** Scans categories under `{vault_root}/{contents_dir}/` (books, movies, series). Parses YAML frontmatter for ratings, creators, genres.
-- **Caching:** `content_service.py` caches parsed content by mtime — no re-parse on every request.
+- **Services:** `config.yaml` `services:` block defines each card on the home page. `monitoring_service.py` checks each service's `url`/`public_url` over HTTP (falls back to a TCP port probe, host derived from the URL), all concurrently with results cached for 30s.
+- **Notes:** Scans the configured `notes_dir` for `.md` files with the `public` tag (or `private`). Renders Obsidian wikilinks (`[[Note]]`) and embeds (`![[image]]`) to HTML.
+- **Attachments:** `/static/attachments/{filename}` only serves files embedded via `![[...]]` in viewable notes — other vault files 404.
+- **Reviews:** Scans category folders under the configured `contents_dir` (books, movies, series). Parses YAML frontmatter for ratings, creators, genres.
+- **Home:** Terminal window types `cowsay` with your greeting, then idles at a blinking prompt. Everything comes from the `terminal:` config block.
+- **About:** Page shell renders instantly; JS fetches `/api/github`, types `fastfetch`, and renders the profile as a **fastfetch-style panel** (GitHub avatar as the logo, `user@host` header, bio/location/GitHub-follower rows, LinkedIn/email/phone links with open-in-new-tab indicators) in a single non-wrapping row that scrolls horizontally. Plus the contribution graph (auto-scrolled to the latest week), own repos, and a "Contributed to" section. Resume renders page 1 to a canvas via pdf.js.
+- **About:** … Contact links (LinkedIn, Messenger, phone) sit in the profile card.
+- **Caching:** `content_service.py` caches parsed content by mtime; `github_service.py` caches API responses (15 min TTL); service status cached 30s.
 
 ## Configuration
 
-All settings live in `config.yaml`:
+**`config.yaml`** holds everything portable (site name, profile/contact, services, tag names, terminal) — safe to push/pull between machines. **`.env`** (gitignored; copy from `.env.example`) holds device-specific absolute paths — `NOTES_DIR`, `CONTENTS_DIR`, `ATTACHMENTS_DIR`, `RESUME_PATH` — referenced from config.yaml as `${NOTES_DIR}` etc. Obsidian vault structure can differ per device; only `.env` cares. `SERVER_DASHBOARD_CONFIG` still overrides the config path (used by tests).
 
 | Key | Purpose |
 |-----|---------|
-| `vault_root` | Absolute path to Obsidian vault |
-| `notes_dir` | Subdirectory for notes, relative to vault root |
-| `contents_dir` | Subdirectory for reviews, relative to vault root |
-| `services` | Dict of services — each with `port`, `url`, `icon_url` (optional), `description`, etc. |
+| `site.name` | Site title, nav brand, hero heading |
+| `resume_path` | Resume PDF, served at `/resume` (section hides if unset/missing) — from `.env` |
+| `profile.github` | `username`, `cache_ttl_minutes` (API cache; protects the 60 req/h unauthenticated limit), `hide_repos` (names or URLs excluded from /about) |
+| `profile.linkedin` / `messenger` / `phone` / `email` | Contact rows on `/about` (a row hides if its key is unset) |
+| `markdown` | `notes_dir`, `contents_dir`, `attachments_dir` — absolute paths from `.env`; `public_tag`, `private_tag` (which tags make notes listed/viewable) |
+| `services` | Dict of services — see below |
+| `terminal` | `user`, `host`, `cow_message`, `shell`, `type_duration_ms` — home terminal prompt + cowsay + title bar; each typed command takes `type_duration_ms` regardless of length |
 
 ### Adding a Service
 
@@ -64,7 +77,8 @@ Add an entry to the `services:` block in `config.yaml`:
   My New Service:
     port: 3000
     url: http://192.168.1.17:3000
-    icon: fa-globe               # Font Awesome class (fallback)
+    host: 127.0.0.1               # optional, defaults to 127.0.0.1
+    icon: fa-globe                # Font Awesome class (fallback)
     icon_url: https://.../icon.svg  # Official logo (preferred)
     description: What this service does
 ```
@@ -99,5 +113,4 @@ Tests use `FastAPI.testclient` with a temp Obsidian vault fixture — no real va
 
 ## Notes
 
-- Service icons use a two-tier system: `icon_url` for official SVG/PNG logos, falling back to Font Awesome `fa-*` classes. Services without official icons (Mnemosyne, OmniRoute) use Font Awesome exclusively.
-- The project home is `/home/tony/Projects/thonystank-homelab`. The vault lives at `/home/tony/SyncProxmox/ObsidianVaults/GroundZero`.
+- The project home is `/home/tony/Projects/thonystank-homelab`. Vault folder paths live in `.env` (see `.env.example`).
