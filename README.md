@@ -118,6 +118,8 @@ The service worker is network-first, so new deploys show up on the next page loa
 
 The **contributions graph** and **"Contributed to"** sections need GitHub GraphQL access: either a `GITHUB_TOKEN` in `.env` (recommended for servers — create a no-scope token at github.com/settings/tokens) or an authenticated `gh` CLI (`gh auth login`) on the device. Without either, those two sections stay empty and the log explains why.
 
+Behind a **Cloudflare tunnel**, purge the edge cache once after the first header-enabled deploy (dashboard → Caching → *Purge Everything*): static responses now send `Cache-Control: no-cache`, so the edge revalidates instead of holding stale CSS/fonts — but already-cached entries linger until purged or expired.
+
 ## Testing
 
 ```bash

@@ -40,7 +40,8 @@ async def manifest():
     path = os.path.join(BASE_DIR, "static", "manifest.json")
     with open(path) as f:
         content = _json.load(f)
-    return Response(content=_json.dumps(content, indent=2), media_type="application/manifest+json")
+    return Response(content=_json.dumps(content, indent=2), media_type="application/manifest+json",
+                    headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/sw.js")
@@ -84,8 +85,20 @@ def resume():
         raise HTTPException(status_code=404, detail="Resume not found")
     return FileResponse(path, headers={"Content-Disposition": 'inline; filename="Anthony_Dayrit_Resume.pdf"'})
 
+class NoCacheStaticFiles(StaticFiles):
+    """StaticFiles with Cache-Control: no-cache.
+
+    Behind Cloudflare (tunnel), .css/.js/.woff2 are edge-cached by default when the
+    origin sends no Cache-Control — stale assets would outlive deploys. no-cache
+    means revalidate (ETag/304): always fresh, still efficient.
+    """
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
 # Mount static files AFTER the attachment route so /static/attachments isn't shadowed
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+app.mount("/static", NoCacheStaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 
 # ── API endpoints for async data ──
