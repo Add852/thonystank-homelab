@@ -183,6 +183,9 @@
         if (LOADED) return;
         LOADED = true;
 
+        // Resume renders in parallel (pdf.js is self-hosted now — no CDN stall)
+        {% if resume_url %}loadResume('{{ resume_url }}');{% endif %}
+
         var profilePromise = fetch('/api/github').then(function(r) { return r.json(); }).catch(function() { return {}; });
 
         var panelBody = document.getElementById('ff-panel-body');
@@ -200,8 +203,6 @@
                     panelBody.appendChild(window.ff.build(github.profile || {},
                         { user: TERM.user, host: TERM.host, contact: CONTACT }));
                     window.ff.cmdLine(panelBody, TERM.user, TERM.host); // fresh prompt, blinking cursor (same as home)
-                    // pdf.js is the heavy one — defer until the typing is done
-                    {% if resume_url %}loadResume('{{ resume_url }}');{% endif %}
                 });
             }, 300);
         });
