@@ -27,13 +27,18 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: clean old caches
+// Activate: clean old caches; on upgrade, reload open tabs so they drop stale assets
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
+      const old = keys.filter((key) => key !== CACHE_NAME);
+      return Promise.all(old.map((key) => caches.delete(key))).then(() => {
+        if (old.length) {
+          return self.clients.matchAll({ type: 'window' }).then((clients) =>
+            clients.forEach((client) => client.navigate(client.url))
+          );
+        }
+      });
     }).then(() => self.clients.claim())
   );
 });

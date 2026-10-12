@@ -116,6 +116,8 @@ sudo systemctl restart <service> # or however uvicorn runs
 
 The service worker is network-first, so new deploys show up on the next page load — no cache bumping needed. `static/` (Tailwind, Font Awesome, NerdFont, pdf.js) is fully self-hosted; the app needs no internet access.
 
+The **contributions graph** and **"Contributed to"** sections need GitHub GraphQL access: either a `GITHUB_TOKEN` in `.env` (recommended for servers — create a no-scope token at github.com/settings/tokens) or an authenticated `gh` CLI (`gh auth login`) on the device. Without either, those two sections stay empty and the log explains why.
+
 ## Testing
 
 ```bash

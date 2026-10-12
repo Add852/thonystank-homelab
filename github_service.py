@@ -6,6 +6,7 @@ import json
 import asyncio
 import time
 import logging
+import os
 import subprocess
 import httpx
 from typing import Optional
@@ -90,7 +91,7 @@ def get_github_repos(cfg: dict, refresh: bool = False) -> list[dict]:
     return [r for r in repos if not _repo_hidden(r["name"], hide)]
 
 def get_github_contributed(cfg: dict, refresh: bool = False) -> list[dict]:
-    """Public repos the user contributed to but doesn't own (via gh CLI GraphQL)."""
+    """Public repos the user contributed to but doesn't own (via GraphQL)."""
     gh = _github_cfg(cfg)
     username = gh.get("username", "")
     ttl = gh.get("cache_ttl_minutes", 15) * 60
@@ -107,41 +108,36 @@ def get_github_contributed(cfg: dict, refresh: bool = False) -> list[dict]:
         'description primaryLanguage { name } stargazerCount url updatedAt isFork } } } }'
         % username
     )
-    try:
-        result = subprocess.run(
-            ["gh", "api", "graphql", "-f", f"query={query}"],
-            capture_output=True, text=True, timeout=15,
-        )
-        if result.returncode != 0:
-            logger.warning("gh CLI contributed-repos error: %s", result.stderr)
-            return []
-        raw = json.loads(result.stdout)
-        nodes = raw["data"]["user"]["repositoriesContributedTo"]["nodes"]
-        repos = [
-            {
-                "name": f"{n['owner']['login']}/{n['name']}",
-                "description": n.get("description") or "",
-                "language": (n.get("primaryLanguage") or {}).get("name") or "",
-                "stars": n.get("stargazerCount", 0),
-                "url": n.get("url", ""),
-                "homepage": "",
-                "fork": n.get("isFork", False),
-                "updated_at": (n.get("updatedAt") or "")[:10],
-            }
-            for n in nodes
-        ]
-        hide = _normalize_repo_filters(gh.get("hide_repos"))
-        repos = [r for r in repos if not _repo_hidden(r["name"], hide)]
-        repos.sort(key=lambda r: r["updated_at"], reverse=True)
-        _CACHE[key] = (now, repos)
-        return repos
-    except Exception as e:
-        logger.warning("Contributed repos fetch error: %s", e)
+    raw = _graphql(query)
+    if not raw:
         return []
+    try:
+        nodes = raw["data"]["user"]["repositoriesContributedTo"]["nodes"]
+    except (KeyError, TypeError) as e:
+        logger.warning("Contributed repos parse error: %s", e)
+        return []
+    repos = [
+        {
+            "name": f"{n['owner']['login']}/{n['name']}",
+            "description": n.get("description") or "",
+            "language": (n.get("primaryLanguage") or {}).get("name") or "",
+            "stars": n.get("stargazerCount", 0),
+            "url": n.get("url", ""),
+            "homepage": "",
+            "fork": n.get("isFork", False),
+            "updated_at": (n.get("updatedAt") or "")[:10],
+        }
+        for n in nodes
+    ]
+    hide = _normalize_repo_filters(gh.get("hide_repos"))
+    repos = [r for r in repos if not _repo_hidden(r["name"], hide)]
+    repos.sort(key=lambda r: r["updated_at"], reverse=True)
+    _CACHE[key] = (now, repos)
+    return repos
 
 
 def _get_github_contributions_sync(cfg: dict, ttl: int, refresh: bool = False) -> Optional[dict]:
-    """Synchronous contributions fetch via gh CLI."""
+    """Contribution calendar via GitHub GraphQL."""
     username = _github_cfg(cfg).get("username", "")
     now = time.time()
     key = f"gh:contributions:{username}"
@@ -157,15 +153,10 @@ def _get_github_contributions_sync(cfg: dict, ttl: int, refresh: bool = False) -
         '{ contributionDays { contributionCount date color } } } } } }'
         % username
     )
+    raw = _graphql(query)
+    if not raw:
+        return None
     try:
-        result = subprocess.run(
-            ["gh", "api", "graphql", "-f", f"query={query}"],
-            capture_output=True, text=True, timeout=15,
-        )
-        if result.returncode != 0:
-            logger.warning("gh CLI contributions error: %s", result.stderr)
-            return None
-        raw = json.loads(result.stdout)
         cal = raw["data"]["user"]["contributionsCollection"]["contributionCalendar"]
         data = {
             "total": cal["totalContributions"],
@@ -185,13 +176,43 @@ def _get_github_contributions_sync(cfg: dict, ttl: int, refresh: bool = False) -
         }
         _CACHE[key] = (now, data)
         return data
-    except Exception as e:
-        logger.warning("Contributions fetch error: %s", e)
+    except (KeyError, TypeError) as e:
+        logger.warning("Contributions parse error: %s", e)
         return None
 
 
+def _graphql(query: str) -> Optional[dict]:
+    """Run a GitHub GraphQL query via GITHUB_TOKEN (httpx) or the gh CLI.
+    Returns parsed JSON, or None when neither is available/authenticated."""
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        try:
+            r = httpx.post("https://api.github.com/graphql",
+                           json={"query": query},
+                           headers={"Authorization": f"Bearer {token}"},
+                           timeout=15)
+            if r.status_code == 200:
+                return r.json()
+            logger.warning("GitHub GraphQL via token -> HTTP %d", r.status_code)
+        except Exception as e:
+            logger.warning("GitHub GraphQL via token error: %s", e)
+    try:
+        result = subprocess.run(
+            ["gh", "api", "graphql", "-f", f"query={query}"],
+            capture_output=True, text=True, timeout=15,
+        )
+        if result.returncode == 0:
+            return json.loads(result.stdout)
+        logger.warning("gh CLI graphql error: %s", result.stderr.strip())
+    except FileNotFoundError:
+        logger.warning("No GITHUB_TOKEN set and gh CLI not installed — GraphQL data unavailable")
+    except Exception as e:
+        logger.warning("gh CLI error: %s", e)
+    return None
+
 def get_github_contributions(cfg: dict, refresh: bool = False) -> Optional[dict]:
-    ttl = _github_cfg(cfg).get("cache_ttl_minutes", 15) * 60
+    gh = _github_cfg(cfg)
+    ttl = gh.get("cache_ttl_minutes", 15) * 60
     return _get_github_contributions_sync(cfg, ttl, refresh)
 
 
