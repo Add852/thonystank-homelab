@@ -11,7 +11,12 @@ profile:
     username: "Add852"
     cache_ttl_minutes: 15              # GitHub API cache (60 req/h unauthenticated)
     hide_repos:                        # repos to exclude from /about (name or full URL)
-      - https://github.com/Add852/thonystank-homelab
+      # - https://github.com/Add852/thonystank-homelab
+      - https://github.com/Add852/add852.github.io
+      - https://github.com/Add852/nixos-config
+      - https://github.com/Add852/xpense-tracker
+      - https://github.com/Add852/WebServer
+
   linkedin: "https://www.linkedin.com/in/anthony-dayrit-785284371"
   messenger: "https://m.me/xusernametakenx/"
   phone: "+63 908 485 3181"
